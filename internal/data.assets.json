@@ -1,0 +1,42 @@
+{
+  "images": {
+    "sprites": {
+      "amethyst": {
+        "name": "amethyst",
+        "path": "assets/img/amethyst.png",
+        "width": 16,
+        "height": 16,
+        "frames": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          }
+        ],
+        "data": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA50lEQVR4nGJioBCwwBhqjI7/hVnY4RLHf+9gJMYAuAtAmhOz6uASlqwe/0PFkv8T7QIYkBGURuGDXHbr/36crsEIA9fIZDB98fU9MLa1tWBoaV2F0yUoJoOcDXIBSCMMgAxQdDcEs2uqwzBcwoTP+TDNRoayuBzAgGEiyM8gjSCArvnc+ccYrsAIRHCAHWb4DzMApAmfC7AmJFioL6qZjiLu52uMEaA4UyJy1MnIiIGxpJICQ3p+MGEXIBvy+OwOMBukmSJw6dLd/6+//AVjZHGMQMQF9PSUGUGGUOYMLIDi7AwIAAD//3/ZT9313wQKAAAAAElFTkSuQmCC"
+      },
+      "player": {
+        "name": "player",
+        "path": "assets/img/player.png",
+        "width": 16,
+        "height": 16,
+        "frames": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          },
+          {
+            "x": 16,
+            "y": 0,
+            "w": 16,
+            "h": 16
+          }
+        ],
+        "data": "iVBORw0KGgoAAAANSUhEUgAAACAAAAAQCAYAAAB3AH1ZAAAAjUlEQVR4nGJiGGAw4A5gwSH+H4nNSKEdeM3CZ/h/EtSSrZ+UKEA3kCpqBzwNYAsWQq4nFBUk6UcPAWKCDp8akvXj9E3WPgMUhdOcLpCUCInVP+BpgBD4T2LqJ1k/vhD4j4NNiuUE9eNyADYNlJYDWPUPeBrA6oCsfQZEieECpOgnpSCitC7Aag4gAAD///Z+J2uuXOfyAAAAAElFTkSuQmCC"
+      }
+    }
+  }
+}

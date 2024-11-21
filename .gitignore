@@ -1,0 +1,4 @@
+.env
+.vscode
+*tailwindcss*
+.DS_Store
