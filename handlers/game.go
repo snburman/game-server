@@ -105,17 +105,20 @@ func HandleGetPlayerAssets(c echo.Context) error {
 }
 
 type Pixel struct {
-	X int `json:"x"`
-	Y int `json:"y"`
-	R int `json:"r"`
-	G int `json:"g"`
-	B int `json:"b"`
-	A int `json:"a"`
+	X     int    `json:"x"`
+	Y     int    `json:"y"`
+	R     int    `json:"r"`
+	G     int    `json:"g"`
+	B     int    `json:"b"`
+	A     int    `json:"a"`
+	Color string `json:"color"`
 }
 
 type PixelData = [][]Pixel
 
 type PlayerAsset[T any] struct {
+	X      int    `json:"x"`
+	Y      int    `json:"y"`
 	Name   string `json:"name"`
 	Width  int    `json:"width"`
 	Height int    `json:"height"`
