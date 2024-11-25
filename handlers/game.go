@@ -37,7 +37,7 @@ func HandleGetGame(c echo.Context) error {
 
 func HandleGetAssets(c echo.Context) error {
 	// get images from db
-	res, err := db.MongoDB.Client.Database("magic_game").Collection("images").
+	res, err := db.MongoDB.Client.Database("game").Collection("images").
 		Find(context.Background(), bson.M{})
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func HandleCreatePlayerAsset(c echo.Context) error {
 	byteAsset.Height = asset.Height
 	byteAsset.Data = []byte(asset.Data)
 
-	_, err := db.MongoDB.Client.Database("magic_game").Collection("player_images").
+	_, err := db.MongoDB.Client.Database("game").Collection("player_images").
 		InsertOne(context.Background(), byteAsset)
 	if err != nil {
 		log.Println("error in inserting image", err)
@@ -73,7 +73,7 @@ func HandleCreatePlayerAsset(c echo.Context) error {
 }
 
 func HandleGetPlayerAssets(c echo.Context) error {
-	res, err := db.MongoDB.Client.Database("magic_game").Collection("player_images").
+	res, err := db.MongoDB.Client.Database("game").Collection("player_images").
 		Find(context.Background(), bson.M{})
 	if err != nil {
 		return err
