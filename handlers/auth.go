@@ -45,7 +45,7 @@ func HandleAuthenticate(c echo.Context) error {
 	}
 
 	// Check if password is valid
-	if !utils.CheckPasswordHash(password, user.Password) {
+	if !utils.ValidatePasswordHash(password, user.Password) {
 		return c.JSON(http.StatusUnauthorized, ErrInvalidCredentials.JSON())
 	}
 
