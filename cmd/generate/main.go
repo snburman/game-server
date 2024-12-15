@@ -17,7 +17,7 @@ func main() {
 	for _, sprite := range assets.Images.Sprites {
 		imgs = append(imgs, sprite)
 	}
-	res, err := db.MongoDB.Client.Database("magic_game").Collection("images").
+	res, err := db.MongoDB.Client.Database(db.GameDatabase).Collection(db.ImagesCollection).
 		InsertMany(context.Background(), imgs)
 	if err != nil {
 		panic(err)

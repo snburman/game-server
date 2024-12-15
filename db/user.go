@@ -2,35 +2,62 @@ package db
 
 import (
 	"context"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type Role string
+
+const CreatorRole Role = "creator"
+
 type User struct {
-	Username string `json:"username" bson:"username"`
-	Password string `json:"password" bson:"password"`
+	ID       string `json:"user_id"`
+	Email    string `json:"email"`
+	UserName string `json:"username"`
+	Password string `json:"password,omitempty"`
 }
 
-func GetUser(db *mongo.Client, username string) (User, error) {
-	mdb := db.Database("magic_game")
-	res := mdb.Collection("users").FindOne(context.Background(), bson.M{
-		"username": username,
+type UserMetaData map[string]struct {
+	UserName string `json:"username"`
+}
+
+type UserProfile struct {
+	UserID   string                 `json:"user_id" bson:"user_id"`
+	UserName string                 `json:"username,omitempty"`
+	Role     Role                   `json:"role"`
+	Worlds   map[string]interface{} `json:"worlds"`
+}
+
+func NewUserProfile(u User) UserProfile {
+	userName := strings.ToLower(u.UserName)
+	return UserProfile{
+		UserID:   u.ID,
+		UserName: userName,
+		Worlds:   make(map[string]interface{}),
+	}
+}
+
+func CreateUserProfile(db *mongo.Client, up UserProfile) (*mongo.InsertOneResult, error) {
+	mdb := db.Database(GameDatabase)
+	return mdb.Collection(UserProfilesCollection).InsertOne(context.Background(), up)
+}
+
+func GetUserProfileByID(db *mongo.Client, ID string) (UserProfile, error) {
+	mdb := db.Database(GameDatabase)
+	res := mdb.Collection(UserProfilesCollection).FindOne(context.Background(), bson.M{
+		"user_id": ID,
 	})
 
-	user := User{}
-	err := res.Decode(&user)
-	return user, err
+	up := UserProfile{}
+	err := res.Decode(&up)
+	return up, err
 }
 
-func CreateUser(db *mongo.Client, user User) (*mongo.InsertOneResult, error) {
-	mdb := db.Database("magic_game")
-	return mdb.Collection("users").InsertOne(context.Background(), user)
-}
-
-func DeleteUser(db *mongo.Client, username string) (*mongo.DeleteResult, error) {
-	mdb := db.Database("magic_game")
-	return mdb.Collection("users").DeleteOne(context.Background(), bson.M{
-		"username": username,
+func DeleteUserProfile(db *mongo.Client, userID string) (*mongo.DeleteResult, error) {
+	mdb := db.Database(GameDatabase)
+	return mdb.Collection(UserProfilesCollection).DeleteOne(context.Background(), bson.M{
+		"user_id": userID,
 	})
 }

@@ -12,6 +12,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const GameDatabase = "game"
+const UserProfilesCollection = "user_profiles"
+const ImagesCollection = "images"
+const PlayerImagesCollection = "player_images"
+
 var MongoDB *MongoDriver
 
 type MongoDriver struct {
@@ -53,4 +58,38 @@ func (m *MongoDriver) Disconnect() error {
 	}
 	log.Println("Disconnected from MongoDB...")
 	return nil
+}
+
+func (m *MongoDriver) Get(params any, opts DatabaseClientOptions, dest *[]any) error {
+	mdb := MongoDB.Client.Database(opts.Database)
+	ctx := context.Background()
+	res, err := mdb.Collection(opts.Table).Find(ctx, params)
+	if err == nil {
+		res.All(ctx, dest)
+	}
+	return err
+}
+
+func (m *MongoDriver) GetOne(id string, opts DatabaseClientOptions, dest *any) error {
+	mdb := MongoDB.Client.Database(opts.Database)
+	res := mdb.Collection(opts.Table).FindOne(context.Background(), bson.M{
+		"user_id": id,
+	})
+	err := res.Decode(&dest)
+	return err
+}
+
+func (m *MongoDriver) CreateOne(document any, opts DatabaseClientOptions) (any, error) {
+	mdb := MongoDB.Client.Database(opts.Database)
+	return mdb.Collection(opts.Table).InsertOne(context.Background(), document)
+}
+
+func (m *MongoDriver) UpdateOne(document any, opts DatabaseClientOptions) (any, error) {
+	return nil, nil
+}
+
+func (m *MongoDriver) Delete(params any, opts DatabaseClientOptions) (count int, err error) {
+	mdb := MongoDB.Client.Database(opts.Database)
+	res, err := mdb.Collection(opts.Table).DeleteOne(context.Background(), params)
+	return int(res.DeletedCount), err
 }

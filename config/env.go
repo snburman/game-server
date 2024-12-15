@@ -12,8 +12,12 @@ import (
 //
 // Environment variables
 type Vars struct {
-	MONGO_URI string
-	SECRET    string
+	MONGO_URI            string
+	SECRET               string
+	STYTCH_PROJECT_ID    string
+	STYTCH_SECRET        string
+	GOOGLE_CLIENT_ID     string
+	GOOGLE_CLIENT_SECRET string
 }
 
 // Env() returns Vars struct of environment variables
@@ -27,7 +31,11 @@ func Env() Vars {
 	}
 
 	return Vars{
-		MONGO_URI: os.Getenv("MONGO_URI"),
-		SECRET:    os.Getenv("SECRET"),
+		MONGO_URI:            os.Getenv("MONGO_URI"),
+		SECRET:               os.Getenv("SECRET"),
+		STYTCH_PROJECT_ID:    os.Getenv("STYTCH_PROJECT_ID"),
+		STYTCH_SECRET:        os.Getenv("STYTCH_SECRET"),
+		GOOGLE_CLIENT_ID:     os.Getenv("GOOGLE_CLIENT_ID"),
+		GOOGLE_CLIENT_SECRET: os.Getenv("GOOGLE_CLIENT_SECRET"),
 	}
 }
