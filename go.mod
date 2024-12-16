@@ -1,21 +1,29 @@
-module github.com/snburman/magic_game_server
+module github.com/snburman/game_server
 
-go 1.21.5
+go 1.23
+
+toolchain go1.23.4
 
 require go.mongodb.org/mongo-driver v1.16.0
 
 require (
+	github.com/MicahParks/keyfunc/v2 v2.0.1 // indirect
 	github.com/alexedwards/scs/v2 v2.8.0 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20200707082815-5321531c36a2 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
+	github.com/golang-jwt/jwt/v5 v5.0.0 // indirect
 	github.com/gorilla/context v1.1.2 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
-	github.com/gorilla/sessions v1.3.0 // indirect
+	github.com/gorilla/sessions v1.4.0 // indirect
 	github.com/labstack/echo-contrib v0.17.1 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/stytchauth/stytch-go/v15 v15.10.0 // indirect
 	golang.org/x/exp v0.0.0-20190731235908-ec7cb31e5a56 // indirect
 	golang.org/x/image v0.0.0-20200801110659-972c09e46d76 // indirect
 	golang.org/x/mobile v0.0.0-20210208171126-f462b3930c8f // indirect
 	golang.org/x/time v0.5.0 // indirect
+	golang.org/x/tools v0.6.0 // indirect
+	golang.org/x/tools/cmd/cover v0.1.0-deprecated // indirect
 )
 
 require (

@@ -2,10 +2,12 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/labstack/echo/v4"
-	"github.com/snburman/magic_game_server/db"
-	"github.com/snburman/magic_game_server/handlers"
+	"github.com/snburman/game_server/config"
+	"github.com/snburman/game_server/db"
+	"github.com/snburman/game_server/handlers"
 )
 
 func main() {
@@ -13,7 +15,7 @@ func main() {
 	// use cors
 	e.Use(handlers.MiddlewareCORS)
 	// use session middleware
-	e.Use(echo.WrapMiddleware(handlers.SessionMiddleWare))
+	// e.Use(echo.WrapMiddleware(handlers.SessionMiddleWare))
 
 	// serve static files
 	e.Static("/", "static")
@@ -24,15 +26,15 @@ func main() {
 	})
 
 	// auth
-	e.GET("/login", handlers.HandleLogin)
-	e.POST("/auth", handlers.HandleAuthenticate)
-	e.POST("/register", handlers.HandleRegister)
-	e.GET("/logout", handlers.HandleLogout)
+	authService := handlers.NewAuthService(
+		config.Env().STYTCH_PROJECT_ID,
+		config.Env().STYTCH_SECRET,
+	)
 
-	// session
-	e.GET("/session/create", handlers.HandleCreateSession)
-	e.GET("/session/get", handlers.HandleGetSession)
-	e.GET("/session/find", handlers.HandleFindSession)
+	// password endpoints
+	e.POST("/user/create", authService.HandleCreateUser)
+	e.POST("/user/login", authService.HandleLoginUser)
+	e.POST("/user/delete", authService.HandleDeleteUser)
 
 	// game
 	e.GET("/game", handlers.HandleGetGame)
@@ -41,5 +43,10 @@ func main() {
 	e.GET("/game/player/assets", handlers.HandleGetPlayerAssets)
 
 	db.NewMongoDriver()
-	e.Logger.Fatal(e.Start(":9191"))
+
+	PORT := os.Getenv("PORT")
+	if PORT == "" {
+		PORT = ":9191"
+	}
+	e.Logger.Fatal(e.Start(PORT))
 }

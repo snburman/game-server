@@ -1,26 +1,38 @@
 package handlers
 
-type Error string
+const (
+	ErrMissingParams ServerError = "missing_params"
 
-func (e Error) Error() string {
+	// Authentication
+	//
+	// Stytch Errors
+	//
+	// https://stytch.com/docs/api/password-authenticate#:~:text=will%20return%20a-,reset_password,-error%20even%20if
+	// user must choose different email or login
+	ErrDuplicateEmail AuthenticationError = "duplicate_email"
+	ErrInvalidEmail   AuthenticationError = "invalid_email"
+	// user must reset password
+	ErrResetPassword    AuthenticationError = "reset_password"
+	ErrBreachedPassword AuthenticationError = "breached_password"
+	// user must choose different password
+	ErrWeakPassword AuthenticationError = "weak_password"
+	// Login Errors
+	//
+	ErrInvalidCredentials AuthenticationError = "invalid_credentials"
+	// Profile Errors
+	ErrCreatingProfile AuthenticationError = "error_creating_profile"
+	ErrProfileExists   AuthenticationError = "user_exists"
+)
+
+type ServerError string
+type AuthenticationError = ServerError
+
+func (e ServerError) Error() string {
 	return string(e)
 }
 
-func (e Error) JSON() map[string]string {
+func (e ServerError) JSON() map[string]string {
 	return map[string]string{
 		"error": e.Error(),
 	}
 }
-
-const (
-	ErrInvalidRequest     Error = "invalid request"
-	ErrInvalidCredentials Error = "invalid credentials"
-	ErrInvalidSession     Error = "invalid session"
-	ErrUserExists         Error = "user already exists"
-	ErrCreatingSession    Error = "error creating session"
-	ErrCreatingUser       Error = "error creating user"
-	ErrFetchingImages     Error = "error fetching images"
-	ErrLoggingIn          Error = "error logging in"
-	ErrLoggingOut         Error = "error logging out"
-	ErrRegistering        Error = "error registering"
-)
