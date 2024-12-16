@@ -1,4 +1,4 @@
-module github.com/snburman/magic_game_server
+module github.com/snburman/game_server
 
 go 1.23
 
@@ -22,6 +22,8 @@ require (
 	golang.org/x/image v0.0.0-20200801110659-972c09e46d76 // indirect
 	golang.org/x/mobile v0.0.0-20210208171126-f462b3930c8f // indirect
 	golang.org/x/time v0.5.0 // indirect
+	golang.org/x/tools v0.6.0 // indirect
+	golang.org/x/tools/cmd/cover v0.1.0-deprecated // indirect
 )
 
 require (

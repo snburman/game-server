@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 
-	"github.com/snburman/magic_game_server/assets"
-	"github.com/snburman/magic_game_server/db"
+	"github.com/snburman/game_server/assets"
+	"github.com/snburman/game_server/db"
 )
 
 func main() {

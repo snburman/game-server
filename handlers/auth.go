@@ -8,8 +8,8 @@ import (
 
 	gorillaSessions "github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
-	"github.com/snburman/magic_game_server/config"
-	"github.com/snburman/magic_game_server/db"
+	"github.com/snburman/game_server/config"
+	"github.com/snburman/game_server/db"
 	"github.com/stytchauth/stytch-go/v15/stytch/consumer/magiclinks"
 	emailML "github.com/stytchauth/stytch-go/v15/stytch/consumer/magiclinks/email"
 	"github.com/stytchauth/stytch-go/v15/stytch/consumer/passwords"

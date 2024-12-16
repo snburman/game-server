@@ -6,8 +6,8 @@ import (
 	"log"
 
 	"github.com/labstack/echo/v4"
-	"github.com/snburman/magic_game_server/assets"
-	"github.com/snburman/magic_game_server/db"
+	"github.com/snburman/game_server/assets"
+	"github.com/snburman/game_server/db"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

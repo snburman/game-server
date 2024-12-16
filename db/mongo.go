@@ -6,13 +6,16 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/snburman/magic_game_server/config"
+	"github.com/snburman/game_server/config"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// Databases
 const GameDatabase = "game"
+
+// Collections
 const UserProfilesCollection = "user_profiles"
 const ImagesCollection = "images"
 const PlayerImagesCollection = "player_images"
