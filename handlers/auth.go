@@ -54,7 +54,7 @@ func (a *AuthService) HandleCreateUser(c echo.Context) error {
 	}
 
 	profile := db.NewUserProfile(user)
-	_, err = db.CreateUserProfile(db.MongoDB.Client, profile)
+	err = db.CreateUserProfile(db.MongoDB, profile)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrCreatingProfile.JSON())
 	}
@@ -83,9 +83,9 @@ func (a *AuthService) HandleLoginUser(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, ErrInvalidCredentials.JSON())
 	}
 
-	profile, err := db.GetUserProfileByID(db.MongoDB.Client, resp.UserID)
+	profile, err := db.GetUserProfileByID(db.MongoDB, resp.UserID)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, ErrInvalidCredentials.JSON())
+		return c.JSON(http.StatusUnauthorized, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, profile)
@@ -105,12 +105,16 @@ func (a *AuthService) HandleDeleteUser(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	res, err := db.DeleteUserProfile(db.MongoDB.Client, user.ID)
+	count, err := db.DeleteUserProfile(db.MongoDB, user.ID)
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, res)
+	return c.JSON(http.StatusOK, struct {
+		Deleted int `json:"deleted"`
+	}{
+		Deleted: count,
+	})
 }
 
 func (a *AuthService) HandlePasswordReset(c echo.Context) error {

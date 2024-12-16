@@ -1,12 +1,17 @@
 package db
 
 import (
-	"context"
+	"errors"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+var userDBOptions DatabaseClientOptions = DatabaseClientOptions{
+	Database: GameDatabase,
+	Table:    UserProfilesCollection,
+}
 
 type Role string
 
@@ -24,10 +29,11 @@ type UserMetaData map[string]struct {
 }
 
 type UserProfile struct {
+	ID       primitive.ObjectID     `json:"-" bson:"_id"`
 	UserID   string                 `json:"user_id" bson:"user_id"`
-	UserName string                 `json:"username,omitempty"`
-	Role     Role                   `json:"role"`
-	Worlds   map[string]interface{} `json:"worlds"`
+	UserName string                 `json:"username,omitempty" bson:"username"`
+	Role     Role                   `json:"role" bson:"role"`
+	Worlds   map[string]interface{} `json:"worlds" bson:"worlds"`
 }
 
 func NewUserProfile(u User) UserProfile {
@@ -39,25 +45,24 @@ func NewUserProfile(u User) UserProfile {
 	}
 }
 
-func CreateUserProfile(db *mongo.Client, up UserProfile) (*mongo.InsertOneResult, error) {
-	mdb := db.Database(GameDatabase)
-	return mdb.Collection(UserProfilesCollection).InsertOne(context.Background(), up)
+func CreateUserProfile(db DatabaseClient, up UserProfile) error {
+	return db.CreateOne(up, userDBOptions)
 }
 
-func GetUserProfileByID(db *mongo.Client, ID string) (UserProfile, error) {
-	mdb := db.Database(GameDatabase)
-	res := mdb.Collection(UserProfilesCollection).FindOne(context.Background(), bson.M{
-		"user_id": ID,
-	})
-
-	up := UserProfile{}
-	err := res.Decode(&up)
-	return up, err
+func GetUserProfileByID(db DatabaseClient, userID string) (UserProfile, error) {
+	res, err := db.GetOne(bson.M{"user_id": userID}, userDBOptions)
+	if err != nil {
+		return UserProfile{}, err
+	}
+	b, err := bson.Marshal(res)
+	var profile UserProfile
+	err = bson.Unmarshal(b, &profile)
+	if err != nil {
+		return UserProfile{}, errors.New("error_marshalling_profile")
+	}
+	return profile, nil
 }
 
-func DeleteUserProfile(db *mongo.Client, userID string) (*mongo.DeleteResult, error) {
-	mdb := db.Database(GameDatabase)
-	return mdb.Collection(UserProfilesCollection).DeleteOne(context.Background(), bson.M{
-		"user_id": userID,
-	})
+func DeleteUserProfile(db DatabaseClient, userID string) (int, error) {
+	return db.Delete(bson.M{"user_id": userID}, userDBOptions)
 }

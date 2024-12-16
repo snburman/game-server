@@ -70,18 +70,18 @@ func (m *MongoDriver) Get(params any, opts DatabaseClientOptions, dest *[]any) e
 	return err
 }
 
-func (m *MongoDriver) GetOne(id string, opts DatabaseClientOptions, dest *any) error {
+func (m *MongoDriver) GetOne(params any, opts DatabaseClientOptions) (any, error) {
 	mdb := MongoDB.Client.Database(opts.Database)
-	res := mdb.Collection(opts.Table).FindOne(context.Background(), bson.M{
-		"user_id": id,
-	})
+	res := mdb.Collection(opts.Table).FindOne(context.Background(), params)
+	var dest any
 	err := res.Decode(&dest)
-	return err
+	return dest, err
 }
 
-func (m *MongoDriver) CreateOne(document any, opts DatabaseClientOptions) (any, error) {
+func (m *MongoDriver) CreateOne(document any, opts DatabaseClientOptions) error {
 	mdb := MongoDB.Client.Database(opts.Database)
-	return mdb.Collection(opts.Table).InsertOne(context.Background(), document)
+	_, err := mdb.Collection(opts.Table).InsertOne(context.Background(), document)
+	return err
 }
 
 func (m *MongoDriver) UpdateOne(document any, opts DatabaseClientOptions) (any, error) {

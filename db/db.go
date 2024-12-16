@@ -7,8 +7,8 @@ type DatabaseClientOptions struct {
 
 type DatabaseClient interface {
 	Get(params any, opts DatabaseClientOptions, dest *[]any) error
-	GetOne(id string, opts DatabaseClientOptions, dest *any) error
-	CreateOne(document any, opts DatabaseClientOptions) (any, error)
+	GetOne(params any, opts DatabaseClientOptions) (any, error)
+	CreateOne(document any, opts DatabaseClientOptions) error
 	UpdateOne(document any, opts DatabaseClientOptions) (any, error)
-	Delete(params any, opts DatabaseClientOptions) (int, error)
+	Delete(params any, opts DatabaseClientOptions) (count int, err error)
 }
