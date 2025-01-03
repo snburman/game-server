@@ -21,10 +21,8 @@ type AuthResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-func NewAuthService(s *sessions.CookieStore) *AuthService {
-	return &AuthService{
-		store: s,
-	}
+func NewAuthService() *AuthService {
+	return &AuthService{}
 }
 
 func (a *AuthService) HandleRefreshToken(c echo.Context) error {
@@ -82,7 +80,9 @@ func (a *AuthService) HandleGetUser(c echo.Context) error {
 	user.Password = ""
 	if user.Banned {
 		log.Println("user_banned")
-		return c.NoContent(http.StatusForbidden)
+		return c.JSON(http.StatusForbidden, AuthResponse{
+			ServerError: ErrUserBanned,
+		})
 	}
 
 	return c.JSON(http.StatusOK, user)
@@ -127,12 +127,16 @@ func (a *AuthService) HandleLoginUser(c echo.Context) error {
 	var u db.User
 	err := c.Bind(&u)
 	if err != nil || u.UserName == "" || u.Password == "" {
-		return c.JSON(http.StatusBadRequest, ErrMissingParams.JSON())
+		return c.JSON(http.StatusBadRequest, AuthResponse{
+			ServerError: ErrMissingParams,
+		})
 	}
 
 	user, err := db.GetUserByUserName(db.MongoDB, u.UserName)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, err.Error())
+		return c.JSON(http.StatusUnauthorized, AuthResponse{
+			ServerError: ErrInvalidCredentials,
+		})
 	}
 
 	passwordValid := utils.CheckPasswordHash(u.Password, user.Password)

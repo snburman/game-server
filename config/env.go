@@ -15,8 +15,7 @@ type Vars struct {
 	MONGO_URI            string
 	SECRET               string
 	ClientID             string
-	STYTCH_PROJECT_ID    string
-	STYTCH_SECRET        string
+	ClientSecret         string
 	GOOGLE_CLIENT_ID     string
 	GOOGLE_CLIENT_SECRET string
 }
@@ -35,8 +34,7 @@ func Env() Vars {
 		MONGO_URI:            os.Getenv("MONGO_URI"),
 		SECRET:               os.Getenv("SECRET"),
 		ClientID:             os.Getenv("CLIENT_ID"),
-		STYTCH_PROJECT_ID:    os.Getenv("STYTCH_PROJECT_ID"),
-		STYTCH_SECRET:        os.Getenv("STYTCH_SECRET"),
+		ClientSecret:         os.Getenv("CLIENT_SECRET"),
 		GOOGLE_CLIENT_ID:     os.Getenv("GOOGLE_CLIENT_ID"),
 		GOOGLE_CLIENT_SECRET: os.Getenv("GOOGLE_CLIENT_SECRET"),
 	}
