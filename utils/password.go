@@ -1,9 +1,36 @@
 package utils
 
-import "golang.org/x/crypto/bcrypt"
+import (
+	"errors"
+	"unicode"
+
+	"golang.org/x/crypto/bcrypt"
+)
 
 func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 9)
+	// password must contain one lowercase, one uppercase, one special character, and be at least 8 characters long
+	errWeakPassword := errors.New("weak_password")
+	if len(password) < 8 {
+		return "", errWeakPassword
+	}
+	upper := false
+	lower := false
+	number := false
+	for _, c := range password {
+		switch {
+		case unicode.IsUpper(c):
+			upper = true
+		case unicode.IsLower(c):
+			lower = true
+		case unicode.IsNumber(c):
+			number = true
+		default:
+		}
+	}
+	if !(upper && lower && number) {
+		return "", errWeakPassword
+	}
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	return string(bytes), err
 }
 

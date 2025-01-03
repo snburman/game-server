@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/sessions"
+	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/snburman/game_server/config"
 	"github.com/snburman/game_server/db"
@@ -14,8 +16,13 @@ func main() {
 	e := echo.New()
 	// use cors
 	e.Use(handlers.MiddlewareCORS)
-	// use session middleware
-	// e.Use(echo.WrapMiddleware(handlers.SessionMiddleWare))
+
+	// use session
+	store := sessions.NewCookieStore([]byte(config.Env().SECRET))
+	e.Use(session.Middleware(store))
+
+	// auth
+	authService := handlers.NewAuthService(store)
 
 	// serve static files
 	e.Static("/", "static")
@@ -25,22 +32,22 @@ func main() {
 		return c.String(http.StatusOK, "service is healthy")
 	})
 
-	// auth
-	authService := handlers.NewAuthService(
-		config.Env().STYTCH_PROJECT_ID,
-		config.Env().STYTCH_SECRET,
-	)
+	// token refresh
+	e.POST("/token/refresh", authService.HandleRefreshToken)
 
-	// password endpoints
+	// user endpoints
+	e.GET("/user", authService.HandleGetUser)
 	e.POST("/user/create", authService.HandleCreateUser)
 	e.POST("/user/login", authService.HandleLoginUser)
-	e.POST("/user/delete", authService.HandleDeleteUser)
+	e.DELETE("/user/delete", authService.HandleDeleteUser)
 
 	// game
 	e.GET("/game", handlers.HandleGetGame)
-	e.GET("/game/assets", handlers.HandleGetAssets)
-	e.POST("/game/player/assets", handlers.HandleCreatePlayerAsset)
-	e.GET("/game/player/assets", handlers.HandleGetPlayerAssets)
+
+	// assets
+	e.GET("/assets", handlers.HandleGetAssets)
+	e.POST("/assets/player", handlers.HandleCreatePlayerAsset)
+	e.GET("/assets/player", handlers.HandleGetPlayerAssets)
 
 	db.NewMongoDriver()
 

@@ -2,12 +2,14 @@ package db
 
 import (
 	"context"
+	"errors"
 	"log"
 	"reflect"
 	"time"
 
 	"github.com/snburman/game_server/config"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -81,18 +83,80 @@ func (m *MongoDriver) GetOne(params any, opts DatabaseClientOptions) (any, error
 	return dest, err
 }
 
-func (m *MongoDriver) CreateOne(document any, opts DatabaseClientOptions) error {
+func (m *MongoDriver) CreateOne(document any, opts DatabaseClientOptions) (insertedID string, err error) {
 	mdb := MongoDB.Client.Database(opts.Database)
-	_, err := mdb.Collection(opts.Table).InsertOne(context.Background(), document)
-	return err
+	res, err := mdb.Collection(opts.Table).InsertOne(context.Background(), document)
+	id := res.InsertedID.(primitive.ObjectID)
+	return id.Hex(), err
 }
 
-func (m *MongoDriver) UpdateOne(document any, opts DatabaseClientOptions) (any, error) {
-	return nil, nil
+func (m *MongoDriver) UpdateOne(id string, document any, opts DatabaseClientOptions) (any, error) {
+	mdb := MongoDB.Client.Database(opts.Database)
+	return mdb.Collection(opts.Table).UpdateOne(context.Background(), bson.M{
+		"_id": primitive.ObjectID([]byte(id)),
+	}, document)
 }
 
 func (m *MongoDriver) Delete(params any, opts DatabaseClientOptions) (count int, err error) {
 	mdb := MongoDB.Client.Database(opts.Database)
 	res, err := mdb.Collection(opts.Table).DeleteOne(context.Background(), params)
 	return int(res.DeletedCount), err
+}
+
+//////////////////////////////////
+// Mock client implementation
+//////////////////////////////////
+
+type MockMongoClient struct {
+	Fixtures map[string]any
+}
+
+func NewMockMongoClient(fixtures map[string]any) *MockMongoClient {
+	return &MockMongoClient{
+		Fixtures: fixtures,
+	}
+}
+
+func (m *MockMongoClient) Get(params any, opts DatabaseClientOptions, dest *[]any) error {
+	return nil
+}
+
+func (m *MockMongoClient) GetOne(params any, _ DatabaseClientOptions) (any, error) {
+	b, err := bson.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+	res, ok := m.Fixtures[string(b)]
+	if !ok {
+		return nil, errors.New("document not found")
+	}
+	return res, nil
+}
+
+func (m *MockMongoClient) CreateOne(document any, _ DatabaseClientOptions) (string, error) {
+	b, err := bson.Marshal(document)
+	if err != nil {
+		return "", err
+	}
+	m.Fixtures[string(b)] = document
+	return primitive.NewObjectID().Hex(), nil
+}
+
+func (m *MockMongoClient) UpdateOne(id string, document any, opts DatabaseClientOptions) (any, error) {
+	return nil, nil
+}
+
+func (m *MockMongoClient) Delete(params any, opts DatabaseClientOptions) (count int, err error) {
+	b, err := bson.Marshal(params)
+	if err != nil {
+		return 0, err
+	}
+	initial := len(m.Fixtures)
+	_, ok := m.Fixtures[string(b)]
+	if !ok {
+		return 0, errors.New("document not found")
+	}
+	delete(m.Fixtures, string(b))
+	after := len(m.Fixtures)
+	return initial - after, nil
 }
