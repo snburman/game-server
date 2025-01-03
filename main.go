@@ -4,10 +4,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/gorilla/sessions"
-	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
-	"github.com/snburman/game_server/config"
 	"github.com/snburman/game_server/db"
 	"github.com/snburman/game_server/handlers"
 )
@@ -17,12 +14,8 @@ func main() {
 	// use cors
 	e.Use(handlers.MiddlewareCORS)
 
-	// use session
-	store := sessions.NewCookieStore([]byte(config.Env().SECRET))
-	e.Use(session.Middleware(store))
-
 	// auth
-	authService := handlers.NewAuthService(store)
+	authService := handlers.NewAuthService()
 
 	// serve static files
 	e.Static("/", "static")

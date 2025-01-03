@@ -2,16 +2,14 @@ package handlers
 
 const (
 	ErrMissingParams ServerError = "missing_params"
-
-	// user must choose different password
-	ErrWeakPassword AuthenticationError = "weak_password"
 	// Login Errors
 	//
 	ErrInvalidCredentials AuthenticationError = "invalid_credentials"
-	// Profile Errors
-	ErrCreatingProfile AuthenticationError = "error_creating_profile"
-	ErrUserExists      AuthenticationError = "user_exists"
-	ErrUserBanned      AuthenticationError = "user_banned"
+	ErrWeakPassword       AuthenticationError = "weak_password"
+	// User Errors
+	ErrCreatingUser AuthenticationError = "error_creating_user"
+	ErrUserExists   AuthenticationError = "user_exists"
+	ErrUserBanned   AuthenticationError = "user_banned"
 )
 
 type ServerError string
