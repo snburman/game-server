@@ -157,19 +157,34 @@ func (a *AuthService) HandleLoginUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+func (a *AuthService) HandleUpdateUser(c echo.Context) error {
+	var user db.User
+	err := c.Bind(&user)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, errors.ErrMissingParams.JSON())
+	}
+	err = db.UpdateUser(db.MongoDB, user)
+	if err != nil {
+		if err.Error() == errors.ErrWeakPassword.Error() {
+			return c.JSON(http.StatusBadRequest, errors.ErrWeakPassword.JSON())
+		}
+		log.Println(err)
+		return c.JSON(http.StatusInternalServerError, errors.ErrUpdatingUser.JSON())
+	}
+	return c.NoContent(http.StatusAccepted)
+}
+
 func (a *AuthService) HandleDeleteUser(c echo.Context) error {
 	claims, ok := c.(middleware.JWTContext)
 	if !ok {
-		return c.JSON(http.StatusUnauthorized, AuthResponse{
-			ServerError: errors.ErrInvalidJWT,
-		})
+		return c.JSON(http.StatusUnauthorized, errors.ErrInvalidJWT.JSON())
 	}
 	if claims.UserID == "" {
 		return c.JSON(http.StatusBadRequest, errors.ErrMissingParams.JSON())
 	}
 	count, err := db.DeleteUser(db.MongoDB, claims.UserID)
 	if err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, errors.ServerError(err.Error()).JSON())
 	}
 
 	return c.JSON(http.StatusAccepted, struct {
@@ -177,27 +192,4 @@ func (a *AuthService) HandleDeleteUser(c echo.Context) error {
 	}{
 		Deleted: count,
 	})
-}
-
-func (a *AuthService) HandleUpdateUser(c echo.Context) error {
-	var user db.User
-	err := c.Bind(&user)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, AuthResponse{
-			ServerError: errors.ErrMissingParams,
-		})
-	}
-	err = db.UpdateUser(db.MongoDB, user)
-	if err != nil {
-		if err.Error() == errors.ErrWeakPassword.Error() {
-			return c.JSON(http.StatusBadRequest, AuthResponse{
-				ServerError: errors.ErrWeakPassword,
-			})
-		}
-		log.Println(err)
-		return c.JSON(http.StatusInternalServerError, AuthResponse{
-			ServerError: errors.ErrUpdatingUser,
-		})
-	}
-	return c.NoContent(http.StatusAccepted)
 }
