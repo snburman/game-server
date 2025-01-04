@@ -8,6 +8,8 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
 	"github.com/snburman/game_server/db"
+	"github.com/snburman/game_server/errors"
+	"github.com/snburman/game_server/middleware"
 	"github.com/snburman/game_server/utils"
 )
 
@@ -16,9 +18,9 @@ type AuthService struct {
 }
 
 type AuthResponse struct {
-	ServerError  `json:"error,omitempty"`
-	Token        string `json:"token"`
-	RefreshToken string `json:"refresh_token"`
+	errors.ServerError `json:"error,omitempty"`
+	Token              string `json:"token"`
+	RefreshToken       string `json:"refresh_token"`
 }
 
 func NewAuthService() *AuthService {
@@ -60,17 +62,11 @@ func (a *AuthService) HandleRefreshToken(c echo.Context) error {
 }
 
 func (a *AuthService) HandleGetUser(c echo.Context) error {
-	token := c.QueryParam("token")
-	if token == "" {
-		return c.JSON(http.StatusBadRequest, AuthResponse{
-			ServerError: ErrMissingParams,
+	claims, ok := c.(middleware.JWTContext)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, AuthResponse{
+			ServerError: errors.ErrInvalidJWT,
 		})
-	}
-
-	claims, err := utils.DecodeJWT(token)
-	if err != nil || claims.UserID == "" {
-		log.Println("bad_refresh_token")
-		return c.NoContent(http.StatusUnauthorized)
 	}
 	user, err := db.GetUserByID(db.MongoDB, claims.UserID)
 	if err != nil {
@@ -81,37 +77,32 @@ func (a *AuthService) HandleGetUser(c echo.Context) error {
 	if user.Banned {
 		log.Println("user_banned")
 		return c.JSON(http.StatusForbidden, AuthResponse{
-			ServerError: ErrUserBanned,
+			ServerError: errors.ErrUserBanned,
 		})
 	}
-
 	return c.JSON(http.StatusOK, user)
 }
 
 func (a *AuthService) HandleCreateUser(c echo.Context) error {
-	var u db.User
-	err := c.Bind(&u)
-	if err != nil || u.Password == "" || u.UserName == "" {
-		return c.JSON(http.StatusBadRequest, AuthResponse{
-			ServerError: ServerError(err.Error()),
-		})
+	// get user from context
+	u, err := middleware.UnmarshalClientDataContext[db.User](c)
+	if err != nil {
+		return err
 	}
 	// check if user exists
 	user, err := db.GetUserByUserName(db.MongoDB, u.UserName)
 	if err == nil && user.UserName == u.UserName {
 		return c.JSON(http.StatusInternalServerError, AuthResponse{
-			ServerError: ServerError("user_exists"),
+			ServerError: errors.ErrUserExists,
 		})
 	}
-
 	// create user
 	id, err := db.CreateUser(db.MongoDB, u)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, AuthResponse{
-			ServerError: ServerError(err.Error()),
+			ServerError: errors.ServerError(err.Error()),
 		})
 	}
-
 	// generate token response
 	token := utils.GenerateJWT(id.Hex(), time.Minute*30)
 	refreshToken := utils.GenerateJWT(id.Hex(), time.Hour*7*24)
@@ -119,39 +110,40 @@ func (a *AuthService) HandleCreateUser(c echo.Context) error {
 		Token:        token,
 		RefreshToken: refreshToken,
 	}
-
 	return c.JSON(http.StatusCreated, res)
 }
 
 func (a *AuthService) HandleLoginUser(c echo.Context) error {
-	var u db.User
-	err := c.Bind(&u)
-	if err != nil || u.UserName == "" || u.Password == "" {
-		return c.JSON(http.StatusBadRequest, AuthResponse{
-			ServerError: ErrMissingParams,
+	// get user data from context
+	u, err := middleware.UnmarshalClientDataContext[db.User](c)
+	if err != nil {
+		return err
+	}
+	if u.UserName == "" || u.Password == "" {
+		return c.JSON(http.StatusUnauthorized, AuthResponse{
+			ServerError: errors.ErrMissingParams,
 		})
 	}
-
+	// get user from db
 	user, err := db.GetUserByUserName(db.MongoDB, u.UserName)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, AuthResponse{
-			ServerError: ErrInvalidCredentials,
+			ServerError: errors.ErrInvalidCredentials,
 		})
 	}
-
+	// validate password
 	passwordValid := utils.CheckPasswordHash(u.Password, user.Password)
 	if !passwordValid {
 		return c.JSON(http.StatusForbidden, AuthResponse{
-			ServerError: ErrInvalidCredentials,
+			ServerError: errors.ErrInvalidCredentials,
 		})
 	}
-
+	// reject if user banned
 	if user.Banned {
 		return c.JSON(http.StatusForbidden, AuthResponse{
-			ServerError: ErrUserBanned,
+			ServerError: errors.ErrUserBanned,
 		})
 	}
-
 	// generate token response
 	token := utils.GenerateJWT(user.ID.Hex(), time.Minute*30)
 	refreshToken := utils.GenerateJWT(user.ID.Hex(), time.Hour*7*24)
@@ -159,26 +151,25 @@ func (a *AuthService) HandleLoginUser(c echo.Context) error {
 		Token:        token,
 		RefreshToken: refreshToken,
 	}
-
 	return c.JSON(http.StatusOK, res)
 }
 
 func (a *AuthService) HandleDeleteUser(c echo.Context) error {
-	var user db.User
-	err := c.Bind(&user)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, ErrMissingParams.JSON())
+	claims, ok := c.(middleware.JWTContext)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, AuthResponse{
+			ServerError: errors.ErrInvalidJWT,
+		})
 	}
-	if user.ID.Hex() == "" {
-		return c.JSON(http.StatusBadRequest, ErrMissingParams.JSON())
+	if claims.UserID == "" {
+		return c.JSON(http.StatusBadRequest, errors.ErrMissingParams.JSON())
 	}
-
-	count, err := db.DeleteUser(db.MongoDB, user.ID.Hex())
+	count, err := db.DeleteUser(db.MongoDB, claims.UserID)
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, struct {
+	return c.JSON(http.StatusAccepted, struct {
 		Deleted int `json:"deleted"`
 	}{
 		Deleted: count,
@@ -186,21 +177,23 @@ func (a *AuthService) HandleDeleteUser(c echo.Context) error {
 }
 
 func (a *AuthService) HandleUpdateUser(c echo.Context) error {
-	// var user db.User
-	// err := c.Bind(&user)
-	return nil
-}
-
-func (a *AuthService) HandlePasswordReset(c echo.Context) error {
-	return nil
-}
-
-func MiddlewareCORS(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		c.Response().Header().Set("Access-Control-Allow-Origin", "*")
-		c.Response().Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
-		c.Response().Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Cookie")
-		c.Response().Header().Set("Access-Control-Allow-Credentials", "true")
-		return next(c)
+	var user db.User
+	err := c.Bind(&user)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, AuthResponse{
+			ServerError: errors.ErrMissingParams,
+		})
 	}
+	err = db.UpdateUser(db.MongoDB, user)
+	if err != nil {
+		if err.Error() == errors.ErrWeakPassword.Error() {
+			return c.JSON(http.StatusBadRequest, AuthResponse{
+				ServerError: errors.ErrWeakPassword,
+			})
+		}
+		return c.JSON(http.StatusInternalServerError, AuthResponse{
+			ServerError: errors.ErrUpdatingUser,
+		})
+	}
+	return c.NoContent(http.StatusAccepted)
 }

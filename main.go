@@ -7,12 +7,13 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/snburman/game_server/db"
 	"github.com/snburman/game_server/handlers"
+	"github.com/snburman/game_server/middleware"
 )
 
 func main() {
 	e := echo.New()
 	// use cors
-	e.Use(handlers.MiddlewareCORS)
+	e.Use(middleware.MiddlewareCORS)
 
 	// auth
 	authService := handlers.NewAuthService()
@@ -29,10 +30,11 @@ func main() {
 	e.POST("/token/refresh", authService.HandleRefreshToken)
 
 	// user endpoints
-	e.GET("/user", authService.HandleGetUser)
-	e.POST("/user/create", authService.HandleCreateUser)
-	e.POST("/user/login", authService.HandleLoginUser)
-	e.DELETE("/user/delete", authService.HandleDeleteUser)
+	e.GET("/user", middleware.MiddlewareJWT(authService.HandleGetUser))
+	e.POST("/user/create", middleware.MiddlewareClientCredentials(authService.HandleCreateUser))
+	e.POST("/user/login", middleware.MiddlewareClientCredentials(authService.HandleLoginUser))
+	e.PATCH("/user/update", middleware.MiddlewareJWT(authService.HandleUpdateUser))
+	e.DELETE("/user/delete", middleware.MiddlewareJWT(authService.HandleDeleteUser))
 
 	// game
 	e.GET("/game", handlers.HandleGetGame)

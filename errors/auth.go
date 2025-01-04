@@ -1,7 +1,8 @@
-package handlers
+package errors
 
 const (
 	ErrMissingParams ServerError = "missing_params"
+	ErrInvalidJWT    ServerError = "invalid_jwt"
 	// Login Errors
 	//
 	ErrInvalidCredentials AuthenticationError = "invalid_credentials"
@@ -10,6 +11,7 @@ const (
 	ErrCreatingUser AuthenticationError = "error_creating_user"
 	ErrUserExists   AuthenticationError = "user_exists"
 	ErrUserBanned   AuthenticationError = "user_banned"
+	ErrUpdatingUser AuthenticationError = "error_updating_user"
 )
 
 type ServerError string

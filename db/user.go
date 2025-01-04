@@ -86,6 +86,13 @@ func DeleteUser(db DatabaseClient, userID string) (int, error) {
 }
 
 func UpdateUser(db DatabaseClient, u User) error {
+	if u.Password != "" {
+		password, err := utils.HashPassword(u.Password)
+		if err != nil {
+			return err
+		}
+		u.Password = password
+	}
 	res, err := db.UpdateOne(u.ID.Hex(), u, userDBOptions)
 	fmt.Println(res)
 	return err
