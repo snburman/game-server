@@ -28,15 +28,18 @@ func NewAuthService() *AuthService {
 }
 
 func (a *AuthService) HandleRefreshToken(c echo.Context) error {
-	var params struct {
-		RefreshToken string `json:"refresh_token"`
-	}
-	err := c.Bind(&params)
+	rt, err := middleware.UnmarshalClientDataContext[string](c)
+	// var params struct {
+	// 	RefreshToken string `json:"refresh_token"`
+	// 	ClientID     string `json:"client_id"`
+	// 	ClientSecret string `json:"client_secret"`
+	// }
+	// err := c.Bind(&params)
 	if err != nil {
 		log.Println("missing_refresh_token")
 		return c.NoContent(http.StatusUnauthorized)
 	}
-	claims, err := utils.DecodeJWT(params.RefreshToken)
+	claims, err := utils.DecodeJWT(rt)
 	if err != nil || claims.UserID == "" {
 		log.Println("bad_refresh_token")
 		return c.NoContent(http.StatusUnauthorized)
@@ -191,6 +194,7 @@ func (a *AuthService) HandleUpdateUser(c echo.Context) error {
 				ServerError: errors.ErrWeakPassword,
 			})
 		}
+		log.Println(err)
 		return c.JSON(http.StatusInternalServerError, AuthResponse{
 			ServerError: errors.ErrUpdatingUser,
 		})

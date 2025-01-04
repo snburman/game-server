@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/snburman/game_server/config"
+	"github.com/snburman/game_server/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -92,9 +93,34 @@ func (m *MongoDriver) CreateOne(document any, opts DatabaseClientOptions) (inser
 
 func (m *MongoDriver) UpdateOne(id string, document any, opts DatabaseClientOptions) (any, error) {
 	mdb := MongoDB.Client.Database(opts.Database)
+	var updates bson.D
+
+	typeData := reflect.TypeOf(document)
+	values := reflect.ValueOf(document)
+
+	// https://joshua-etim.medium.com/how-i-update-documents-in-mongodb-with-golang-94485dbe54f7
+	for i := 1; i < typeData.NumField(); i++ {
+		field := typeData.Field(i)
+		val := values.Field(i)
+		tag := field.Tag.Get("bson")
+		if tag == "_id" {
+			continue
+		}
+
+		if !utils.IsZeroType(val) {
+			update := bson.E{Key: tag, Value: val.Interface()}
+			updates = append(updates, update)
+		}
+	}
+	updateFilter := bson.D{{Key: "$set", Value: updates}}
+
+	_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
 	return mdb.Collection(opts.Table).UpdateOne(context.Background(), bson.M{
-		"_id": primitive.ObjectID([]byte(id)),
-	}, document)
+		"_id": _id,
+	}, updateFilter)
 }
 
 func (m *MongoDriver) Delete(params any, opts DatabaseClientOptions) (count int, err error) {

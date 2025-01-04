@@ -2,7 +2,6 @@ package db
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/snburman/game_server/utils"
@@ -21,9 +20,9 @@ const CreatorRole Role = "creator"
 const PlayerRole Role = "player"
 
 type User struct {
-	ID       primitive.ObjectID     `json:"_id,omitempty" bson:"_id,omitempty"`
-	UserName string                 `json:"username,omitempty"`
-	Password string                 `json:"password,omitempty"`
+	ID       primitive.ObjectID     `json:"_id,omitempty" bson:"_id"`
+	UserName string                 `json:"username,omitempty" bson:"username"`
+	Password string                 `json:"password,omitempty" bson:"password"`
 	Role     Role                   `json:"role" bson:"role"`
 	Worlds   map[string]interface{} `json:"worlds" bson:"worlds"`
 	Banned   bool                   `json:"banned" bson:"banned"`
@@ -81,8 +80,12 @@ func GetUserByUserName(db DatabaseClient, userName string) (User, error) {
 }
 
 // TODO: implement
-func DeleteUser(db DatabaseClient, userID string) (int, error) {
-	return 0, nil
+func DeleteUser(db DatabaseClient, userID string) (count int, err error) {
+	_id, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return 0, err
+	}
+	return db.Delete(bson.M{"_id": _id}, userDBOptions)
 }
 
 func UpdateUser(db DatabaseClient, u User) error {
@@ -93,7 +96,6 @@ func UpdateUser(db DatabaseClient, u User) error {
 		}
 		u.Password = password
 	}
-	res, err := db.UpdateOne(u.ID.Hex(), u, userDBOptions)
-	fmt.Println(res)
+	_, err := db.UpdateOne(u.ID.Hex(), u, userDBOptions)
 	return err
 }
