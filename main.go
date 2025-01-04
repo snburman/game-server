@@ -27,7 +27,7 @@ func main() {
 	})
 
 	// token refresh
-	e.POST("/token/refresh", authService.HandleRefreshToken)
+	e.POST("/token/refresh", middleware.MiddlewareClientCredentials(authService.HandleRefreshToken))
 
 	// user endpoints
 	e.GET("/user", middleware.MiddlewareJWT(authService.HandleGetUser))
