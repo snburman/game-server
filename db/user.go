@@ -79,7 +79,6 @@ func GetUserByUserName(db DatabaseClient, userName string) (User, error) {
 	return user, nil
 }
 
-// TODO: implement
 func DeleteUser(db DatabaseClient, userID string) (count int, err error) {
 	_id, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
