@@ -67,7 +67,7 @@ func (m *MongoDriver) Disconnect() error {
 	return nil
 }
 
-func (m *MongoDriver) Get(params any, opts DatabaseClientOptions, dest *[]any) error {
+func (m *MongoDriver) Get(params any, opts DatabaseClientOptions, dest any) error {
 	mdb := MongoDB.Client.Database(opts.Database)
 	ctx := context.Background()
 	res, err := mdb.Collection(opts.Table).Find(ctx, params)
@@ -104,6 +104,10 @@ func (m *MongoDriver) UpdateOne(id string, document any, opts DatabaseClientOpti
 		field := typeData.Field(i)
 		val := values.Field(i)
 		tag := field.Tag.Get("bson")
+		// disregard fields without bson tag
+		if tag == "" {
+			continue
+		}
 		// disregard secondary tag fragment
 		tagStripped := strings.Split(tag, ",")
 		if len(tagStripped) > 1 {

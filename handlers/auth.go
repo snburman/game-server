@@ -29,12 +29,6 @@ func NewAuthService() *AuthService {
 
 func (a *AuthService) HandleRefreshToken(c echo.Context) error {
 	rt, err := middleware.UnmarshalClientDataContext[string](c)
-	// var params struct {
-	// 	RefreshToken string `json:"refresh_token"`
-	// 	ClientID     string `json:"client_id"`
-	// 	ClientSecret string `json:"client_secret"`
-	// }
-	// err := c.Bind(&params)
 	if err != nil {
 		log.Println("missing_refresh_token")
 		return c.NoContent(http.StatusUnauthorized)
@@ -65,24 +59,28 @@ func (a *AuthService) HandleRefreshToken(c echo.Context) error {
 }
 
 func (a *AuthService) HandleGetUser(c echo.Context) error {
+	// get user from context
 	claims, ok := c.(middleware.JWTContext)
 	if !ok {
 		return c.JSON(http.StatusUnauthorized, AuthResponse{
 			ServerError: errors.ErrInvalidJWT,
 		})
 	}
+	// get user from db
 	user, err := db.GetUserByID(db.MongoDB, claims.UserID)
 	if err != nil {
 		log.Println("user_not_found")
 		return c.NoContent(http.StatusUnauthorized)
 	}
-	user.Password = ""
+	// reject if user is banned
 	if user.Banned {
 		log.Println("user_banned")
 		return c.JSON(http.StatusForbidden, AuthResponse{
 			ServerError: errors.ErrUserBanned,
 		})
 	}
+	// remove password from response
+	user.Password = ""
 	return c.JSON(http.StatusOK, user)
 }
 
@@ -184,7 +182,9 @@ func (a *AuthService) HandleDeleteUser(c echo.Context) error {
 	}
 	count, err := db.DeleteUser(db.MongoDB, claims.UserID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, errors.ServerError(err.Error()).JSON())
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON())
 	}
 
 	return c.JSON(http.StatusAccepted, struct {
