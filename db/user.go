@@ -20,7 +20,7 @@ const CreatorRole Role = "creator"
 const PlayerRole Role = "player"
 
 type User struct {
-	ID       primitive.ObjectID     `json:"_id,omitempty" bson:"_id"`
+	ID       primitive.ObjectID     `json:"_id,omitempty" bson:"_id,omitempty"`
 	UserName string                 `json:"username,omitempty" bson:"username"`
 	Password string                 `json:"password,omitempty" bson:"password"`
 	Role     Role                   `json:"role" bson:"role"`
