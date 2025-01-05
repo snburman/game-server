@@ -52,16 +52,26 @@ func CreateUser(db DatabaseClient, u User) (instertedID primitive.ObjectID, err 
 
 func GetUserByID(db DatabaseClient, userID string) (User, error) {
 	_id, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return User{}, err
+	}
 	res, err := db.GetOne(bson.M{"_id": _id}, userDBOptions)
 	if err != nil {
 		return User{}, err
 	}
-	b, err := bson.Marshal(res)
 	var user User
-	err = bson.Unmarshal(b, &user)
-	if err != nil {
+	if err = utils.UnmarshalBSON(res, &user); err != nil {
 		return User{}, errors.New("error umarshalling user")
 	}
+	// b, err := bson.Marshal(res)
+	// if err != nil {
+	// 	return User{}, err
+	// }
+	// var user User
+	// err = bson.Unmarshal(b, &user)
+	// if err != nil {
+	// 	return User{}, errors.New("error umarshalling user")
+	// }
 	return user, nil
 }
 

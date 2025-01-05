@@ -40,9 +40,13 @@ func main() {
 	e.GET("/game", handlers.HandleGetGame)
 
 	// assets
-	e.GET("/assets", handlers.HandleGetAssets)
-	e.POST("/assets/player", handlers.HandleCreatePlayerAsset)
-	e.GET("/assets/player", handlers.HandleGetPlayerAssets)
+	//
+	// all assets
+	e.GET("/assets", middleware.MiddlewareJWT(handlers.HandleGetAssets))
+	// assets by player
+	e.GET("/assets/player", middleware.MiddlewareJWT(handlers.HandleGetPlayerAssets))
+	e.POST("/assets/player", middleware.MiddlewareJWT(handlers.HandleCreatePlayerAsset))
+	e.PATCH("/assets/player", middleware.MiddlewareJWT(handlers.HandleUpdatePlayerAsset))
 
 	db.NewMongoDriver()
 
