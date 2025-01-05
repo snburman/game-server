@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/snburman/game_server/config"
@@ -103,10 +104,14 @@ func (m *MongoDriver) UpdateOne(id string, document any, opts DatabaseClientOpti
 		field := typeData.Field(i)
 		val := values.Field(i)
 		tag := field.Tag.Get("bson")
-		if tag == "_id" {
-			continue
+		// disregard secondary tag fragment
+		tagStripped := strings.Split(tag, ",")
+		if len(tagStripped) > 1 {
+			tag = tagStripped[0]
+			if tagStripped[0] == "_id" {
+				continue
+			}
 		}
-
 		if !utils.IsZeroType(val) {
 			update := bson.E{Key: tag, Value: val.Interface()}
 			updates = append(updates, update)
