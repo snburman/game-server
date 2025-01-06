@@ -30,7 +30,8 @@ type PixelData = [][]Pixel
 type AssetType string
 
 const (
-	TILE AssetType = "tile"
+	ASSET_TILE   AssetType = "tile"
+	ASSET_OBJECT AssetType = "object"
 )
 
 type PlayerAsset[T any] struct {
