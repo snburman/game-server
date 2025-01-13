@@ -47,6 +47,7 @@ func main() {
 	e.GET("/assets/player", middleware.MiddlewareJWT(handlers.HandleGetPlayerAssets))
 	e.POST("/assets/player", middleware.MiddlewareJWT(handlers.HandleCreatePlayerAsset))
 	e.PATCH("/assets/player", middleware.MiddlewareJWT(handlers.HandleUpdatePlayerAsset))
+	e.DELETE("/assets/player", middleware.MiddlewareJWT(handlers.HandleDeletePlayerAsset))
 
 	db.NewMongoDriver()
 

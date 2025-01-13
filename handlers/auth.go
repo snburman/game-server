@@ -174,11 +174,8 @@ func (a *AuthService) HandleUpdateUser(c echo.Context) error {
 
 func (a *AuthService) HandleDeleteUser(c echo.Context) error {
 	claims, ok := c.(middleware.JWTContext)
-	if !ok {
+	if !ok || claims.UserID == "" {
 		return c.JSON(http.StatusUnauthorized, errors.ErrInvalidJWT.JSON())
-	}
-	if claims.UserID == "" {
-		return c.JSON(http.StatusBadRequest, errors.ErrMissingParams.JSON())
 	}
 	count, err := db.DeleteUser(db.MongoDB, claims.UserID)
 	if err != nil {

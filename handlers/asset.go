@@ -134,3 +134,22 @@ func HandleUpdatePlayerAsset(c echo.Context) error {
 	}
 	return c.NoContent(http.StatusAccepted)
 }
+
+func HandleDeletePlayerAsset(c echo.Context) error {
+	imageID := c.QueryParam("id")
+	if imageID == "" {
+		return c.JSON(http.StatusBadRequest, errors.ErrMissingParams.JSON())
+	}
+	count, err := db.DeletePlayerAsset(db.MongoDB, imageID)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON())
+	}
+
+	return c.JSON(http.StatusAccepted, struct {
+		Deleted int `json:"deleted"`
+	}{
+		Deleted: count,
+	})
+}
