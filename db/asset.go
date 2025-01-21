@@ -106,6 +106,7 @@ func GetPlayerAssetsByUserID(db DatabaseClient, userID string) ([]PlayerAsset[Pi
 		_img.ID = img.ID
 		_img.UserID = img.UserID
 		_img.Name = img.Name
+		_img.AssetType = img.AssetType
 		_img.Width = img.Width
 		_img.Height = img.Height
 		assets = append(assets, *_img)
