@@ -62,7 +62,10 @@ func HandleCreatePlayerAsset(c echo.Context) error {
 	// get asset from req body
 	asset := *new(db.PlayerAsset[string])
 	if err := c.Bind(&asset); err != nil {
-		return err
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ErrBindingPayload.JSON(),
+		)
 	}
 	// reject if claims and asset userID do not match
 	if claims.UserID != asset.UserID {
@@ -81,9 +84,7 @@ func HandleCreatePlayerAsset(c echo.Context) error {
 			errors.ServerError(err.Error()).JSON())
 	}
 
-	return c.JSON(http.StatusAccepted, struct {
-		InsertedID string `json:"inserted_id"`
-	}{
+	return c.JSON(http.StatusAccepted, db.InsertedIDResponse{
 		InsertedID: id.Hex(),
 	})
 }

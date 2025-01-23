@@ -49,6 +49,16 @@ func main() {
 	e.PATCH("/assets/player", middleware.MiddlewareJWT(handlers.HandleUpdatePlayerAsset))
 	e.DELETE("/assets/player", middleware.MiddlewareJWT(handlers.HandleDeletePlayerAsset))
 
+	// maps
+	e.GET("/maps", middleware.MiddlewareJWT(handlers.HandleGetAllMaps))
+	e.GET("/maps/:id", middleware.MiddlewareJWT(handlers.HandleGetMapByID))
+	e.POST("/maps", middleware.MiddlewareJWT(handlers.HandleCreateMap))
+	e.GET("/maps/player", middleware.MiddlewareJWT(handlers.HandleGetPlayerMaps))
+	e.PATCH("/maps", middleware.MiddlewareJWT(handlers.HandleUpdateMap))
+	e.DELETE("/maps/:id", middleware.MiddlewareJWT(handlers.HandleDeleteMap))
+
+	// prefabricated assets
+
 	db.NewMongoDriver()
 
 	PORT := os.Getenv("PORT")

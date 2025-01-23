@@ -100,7 +100,7 @@ func GetPlayerAssetsByUserID(db DatabaseClient, userID string) ([]PlayerAsset[Pi
 		// decode the json string
 		err := json.Unmarshal(img.Data, &_img.Data)
 		if err != nil {
-			log.Println("error decoding image", err)
+			log.Println("error decoding image: ", err)
 			return assets, err
 		}
 		_img.ID = img.ID

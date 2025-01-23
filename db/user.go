@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var userDBOptions DatabaseClientOptions = DatabaseClientOptions{
+var userDBOptions = DatabaseClientOptions{
 	Database: GameDatabase,
 	Table:    UserProfilesCollection,
 }
@@ -20,18 +20,16 @@ const CreatorRole Role = "creator"
 const PlayerRole Role = "player"
 
 type User struct {
-	ID       primitive.ObjectID     `json:"_id,omitempty" bson:"_id,omitempty"`
-	UserName string                 `json:"username,omitempty" bson:"username"`
-	Password string                 `json:"password,omitempty" bson:"password"`
-	Role     Role                   `json:"role" bson:"role"`
-	Worlds   map[string]interface{} `json:"worlds" bson:"worlds"`
-	Banned   bool                   `json:"banned" bson:"banned"`
+	ID       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	UserName string             `json:"username,omitempty" bson:"username"`
+	Password string             `json:"password,omitempty" bson:"password"`
+	Role     Role               `json:"role" bson:"role"`
+	Banned   bool               `json:"banned" bson:"banned"`
 }
 
 func CreateUser(db DatabaseClient, u User) (instertedID primitive.ObjectID, err error) {
 	user := User{
 		UserName: strings.ToLower(u.UserName),
-		Worlds:   make(map[string]interface{}),
 	}
 	password, err := utils.HashPassword(u.Password)
 	if err != nil {
@@ -63,15 +61,6 @@ func GetUserByID(db DatabaseClient, userID string) (User, error) {
 	if err = utils.UnmarshalBSON(res, &user); err != nil {
 		return User{}, errors.New("error umarshalling user")
 	}
-	// b, err := bson.Marshal(res)
-	// if err != nil {
-	// 	return User{}, err
-	// }
-	// var user User
-	// err = bson.Unmarshal(b, &user)
-	// if err != nil {
-	// 	return User{}, errors.New("error umarshalling user")
-	// }
 	return user, nil
 }
 

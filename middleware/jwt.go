@@ -23,7 +23,7 @@ func MiddlewareJWT(next echo.HandlerFunc) echo.HandlerFunc {
 			)
 		}
 		claims, err := utils.DecodeJWT(token)
-		if err != nil {
+		if err != nil || claims.UserID == "" {
 			return c.JSON(
 				http.StatusUnauthorized,
 				errors.AuthenticationError(errors.ErrInvalidJWT).JSON(),
