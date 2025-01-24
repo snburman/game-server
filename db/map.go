@@ -11,7 +11,7 @@ import (
 
 var mapsDBOptions = DatabaseClientOptions{
 	Database: GameDatabase,
-	Table:    UserProfilesCollection,
+	Table:    PlayerMapsCollection,
 }
 
 type Portal struct {
@@ -48,7 +48,7 @@ func CreateMap(db DatabaseClient, m Map[string]) (primitive.ObjectID, error) {
 		Data:     []byte(m.Data),
 	}
 
-	id, err := db.CreateOne(byteMap, assetDBOptions)
+	id, err := db.CreateOne(byteMap, mapsDBOptions)
 	if err != nil {
 		return primitive.NilObjectID, err
 	}

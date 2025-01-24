@@ -23,6 +23,7 @@ const GameDatabase = "game"
 const UserProfilesCollection = "user_profiles"
 const ImagesCollection = "images"
 const PlayerImagesCollection = "player_images"
+const PlayerMapsCollection = "player_maps"
 
 var MongoDB *MongoDriver
 

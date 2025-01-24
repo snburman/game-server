@@ -17,6 +17,7 @@ func HandleGetAllMaps(c echo.Context) error {
 func HandleGetMapByID(c echo.Context) error {
 	return nil
 }
+
 func HandleGetPlayerMaps(c echo.Context) error {
 	claims, ok := c.(middleware.JWTContext)
 	if !ok {
@@ -31,6 +32,7 @@ func HandleGetPlayerMaps(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, maps)
 }
+
 func HandleCreateMap(c echo.Context) error {
 	claims, ok := c.(middleware.JWTContext)
 	if !ok {
