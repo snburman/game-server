@@ -1,8 +1,9 @@
 package errors
 
 const (
-	ErrMissingParams ServerError = "missing_params"
-	ErrInvalidJWT    ServerError = "invalid_jwt"
+	ErrMissingParams  ServerError = "missing_params"
+	ErrInvalidJWT     ServerError = "invalid_jwt"
+	ErrBindingPayload ServerError = "error_binding_payload"
 )
 
 type ServerError string

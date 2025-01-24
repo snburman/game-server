@@ -30,20 +30,25 @@ type PixelData = [][]Pixel
 type AssetType string
 
 const (
-	ASSET_TILE   AssetType = "tile"
-	ASSET_OBJECT AssetType = "object"
+	ASSET_TILE         AssetType = "tile"
+	ASSET_OBJECT       AssetType = "object"
+	ASSET_PORTAL       AssetType = "portal"
+	ASSET_PLAYER_UP    AssetType = "player_up"
+	ASSET_PLAYER_DOWN  AssetType = "player_down"
+	ASSET_PLAYER_LEFT  AssetType = "player_left"
+	ASSET_PLAYER_RIGHT AssetType = "player_right"
 )
 
 type PlayerAsset[T any] struct {
-	ID     primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	UserID string             `json:"user_id" bson:"user_id"`
-	Name   string             `json:"name" bson:"name"`
-	Type   AssetType          `json:"type" bson:"type"`
-	X      int                `json:"x" bson:"x"`
-	Y      int                `json:"y" bson:"y"`
-	Width  int                `json:"width" bson:"width"`
-	Height int                `json:"height" bson:"height"`
-	Data   T                  `json:"data" bson:"data"`
+	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	UserID    string             `json:"user_id" bson:"user_id"`
+	Name      string             `json:"name" bson:"name"`
+	AssetType AssetType          `json:"asset_type" bson:"asset_type"`
+	X         int                `json:"x" bson:"x"`
+	Y         int                `json:"y" bson:"y"`
+	Width     int                `json:"width" bson:"width"`
+	Height    int                `json:"height" bson:"height"`
+	Data      T                  `json:"data" bson:"data"`
 }
 
 // CreatePlayerAsset will return an error if 'p' already exists.
@@ -57,14 +62,14 @@ func CreatePlayerAsset(db DatabaseClient, p PlayerAsset[string]) (primitive.Obje
 
 	// convert to byte asset
 	byteAsset := PlayerAsset[[]byte]{
-		UserID: p.UserID,
-		Name:   p.Name,
-		Type:   p.Type,
-		X:      p.X,
-		Y:      p.Y,
-		Width:  p.Width,
-		Height: p.Height,
-		Data:   []byte(p.Data),
+		UserID:    p.UserID,
+		Name:      p.Name,
+		AssetType: p.AssetType,
+		X:         p.X,
+		Y:         p.Y,
+		Width:     p.Width,
+		Height:    p.Height,
+		Data:      []byte(p.Data),
 	}
 
 	id, err := db.CreateOne(byteAsset, assetDBOptions)
@@ -95,12 +100,13 @@ func GetPlayerAssetsByUserID(db DatabaseClient, userID string) ([]PlayerAsset[Pi
 		// decode the json string
 		err := json.Unmarshal(img.Data, &_img.Data)
 		if err != nil {
-			log.Println("error decoding image", err)
+			log.Println("error decoding image: ", err)
 			return assets, err
 		}
 		_img.ID = img.ID
 		_img.UserID = img.UserID
 		_img.Name = img.Name
+		_img.AssetType = img.AssetType
 		_img.Width = img.Width
 		_img.Height = img.Height
 		assets = append(assets, *_img)
@@ -129,7 +135,7 @@ func GetPlayerAssetByNameUserID(db DatabaseClient, name string, userID string) (
 	asset.ID = byteAsset.ID
 	asset.UserID = byteAsset.UserID
 	asset.Name = byteAsset.Name
-	asset.Type = byteAsset.Type
+	asset.AssetType = byteAsset.AssetType
 	asset.X = byteAsset.X
 	asset.Y = byteAsset.Y
 	asset.Width = byteAsset.Width
@@ -141,15 +147,23 @@ func GetPlayerAssetByNameUserID(db DatabaseClient, name string, userID string) (
 func UpdatePlayerAsset(db DatabaseClient, p PlayerAsset[string]) error {
 	// convert to byte asset
 	byteAsset := PlayerAsset[[]byte]{
-		UserID: p.UserID,
-		Name:   p.Name,
-		Type:   p.Type,
-		X:      p.X,
-		Y:      p.Y,
-		Width:  p.Width,
-		Height: p.Height,
-		Data:   []byte(p.Data),
+		UserID:    p.UserID,
+		Name:      p.Name,
+		AssetType: p.AssetType,
+		X:         p.X,
+		Y:         p.Y,
+		Width:     p.Width,
+		Height:    p.Height,
+		Data:      []byte(p.Data),
 	}
 	_, err := db.UpdateOne(p.ID.Hex(), byteAsset, assetDBOptions)
 	return err
+}
+
+func DeletePlayerAsset(db DatabaseClient, id string) (count int, err error) {
+	_id, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return 0, err
+	}
+	return db.Delete(bson.M{"_id": _id}, assetDBOptions)
 }

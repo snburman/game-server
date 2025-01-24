@@ -8,8 +8,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Type Vars
-//
 // Environment variables
 type Vars struct {
 	MONGO_URI            string

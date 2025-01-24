@@ -62,7 +62,10 @@ func HandleCreatePlayerAsset(c echo.Context) error {
 	// get asset from req body
 	asset := *new(db.PlayerAsset[string])
 	if err := c.Bind(&asset); err != nil {
-		return err
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ErrBindingPayload.JSON(),
+		)
 	}
 	// reject if claims and asset userID do not match
 	if claims.UserID != asset.UserID {
@@ -81,9 +84,7 @@ func HandleCreatePlayerAsset(c echo.Context) error {
 			errors.ServerError(err.Error()).JSON())
 	}
 
-	return c.JSON(http.StatusAccepted, struct {
-		InsertedID string `json:"inserted_id"`
-	}{
+	return c.JSON(http.StatusAccepted, db.InsertedIDResponse{
 		InsertedID: id.Hex(),
 	})
 }
@@ -133,4 +134,23 @@ func HandleUpdatePlayerAsset(c echo.Context) error {
 		)
 	}
 	return c.NoContent(http.StatusAccepted)
+}
+
+func HandleDeletePlayerAsset(c echo.Context) error {
+	imageID := c.QueryParam("id")
+	if imageID == "" {
+		return c.JSON(http.StatusBadRequest, errors.ErrMissingParams.JSON())
+	}
+	count, err := db.DeletePlayerAsset(db.MongoDB, imageID)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON())
+	}
+
+	return c.JSON(http.StatusAccepted, struct {
+		Deleted int `json:"deleted"`
+	}{
+		Deleted: count,
+	})
 }

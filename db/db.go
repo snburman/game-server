@@ -13,3 +13,11 @@ type DatabaseClient interface {
 	UpdateOne(id string, document any, opts DatabaseClientOptions) (any, error)
 	Delete(params any, opts DatabaseClientOptions) (count int, err error)
 }
+
+//////////////////////////
+// return types
+//////////////////////////
+
+type InsertedIDResponse struct {
+	InsertedID string `json:"inserted_id"`
+}
