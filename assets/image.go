@@ -13,6 +13,16 @@ const (
 	PNG AssetType = "png"
 )
 
+type Image struct {
+	Name          string      `json:"name"`
+	Path          string      `json:"path"`
+	Width         int         `json:"width"`
+	Height        int         `json:"height"`
+	Frames        []FrameSpec `json:"frames"`
+	Data          []byte      `json:"data"`
+	*ebiten.Image `json:"-"`
+}
+
 func pngBytesFromFile(file io.Reader) ([]byte, error) {
 	img, _, err := image.Decode(file)
 	if err != nil {

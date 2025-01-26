@@ -12,8 +12,8 @@ import (
 type Vars struct {
 	MONGO_URI            string
 	SECRET               string
-	ClientID             string
-	ClientSecret         string
+	CLIENT_ID            string
+	CLIENT_SECRET        string
 	GOOGLE_CLIENT_ID     string
 	GOOGLE_CLIENT_SECRET string
 }
@@ -31,8 +31,8 @@ func Env() Vars {
 	return Vars{
 		MONGO_URI:            os.Getenv("MONGO_URI"),
 		SECRET:               os.Getenv("SECRET"),
-		ClientID:             os.Getenv("CLIENT_ID"),
-		ClientSecret:         os.Getenv("CLIENT_SECRET"),
+		CLIENT_ID:            os.Getenv("CLIENT_ID"),
+		CLIENT_SECRET:        os.Getenv("CLIENT_SECRET"),
 		GOOGLE_CLIENT_ID:     os.Getenv("GOOGLE_CLIENT_ID"),
 		GOOGLE_CLIENT_SECRET: os.Getenv("GOOGLE_CLIENT_SECRET"),
 	}

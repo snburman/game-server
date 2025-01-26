@@ -10,12 +10,23 @@ import (
 	"github.com/snburman/game_server/middleware"
 )
 
-func HandleGetAllMaps(c echo.Context) error {
-	return nil
-}
-
 func HandleGetMapByID(c echo.Context) error {
-	return nil
+	id := c.Param("id")
+	if id == "" {
+		return c.JSON(
+			http.StatusBadRequest,
+			errors.ErrMissingParams.JSON(),
+		)
+	}
+
+	_map, err := db.GetMapByID(db.MongoDB, id)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+	return c.JSON(http.StatusOK, _map)
 }
 
 func HandleGetPlayerMaps(c echo.Context) error {
