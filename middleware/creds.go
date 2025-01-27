@@ -71,7 +71,7 @@ func UnmarshalClientDataContext[T any](c echo.Context) (T, error) {
 	return data, nil
 }
 
-func MiddleWareGameAuth(next echo.HandlerFunc) echo.HandlerFunc {
+func MiddleWareClientHeaders(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		clientID := c.Request().Header.Get("CLIENT_ID")
 		clientSecret := c.Request().Header.Get("CLIENT_SECRET")

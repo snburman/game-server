@@ -39,9 +39,9 @@ func main() {
 	// game
 	//
 	// initiated by game client to retrieve wasm with map by ID
-	e.GET("/game/client/:mapID", handlers.HandleGetGame)
+	e.GET("/game/client/map/:id", handlers.HandleGetGame)
 	// initiated by game wasm to retrieve map by ID
-	e.GET("/game/wasm/map/:id", middleware.MiddleWareGameAuth(handlers.HandleGetMapByID))
+	e.GET("/game/wasm/map/:id", middleware.MiddleWareClientHeaders(handlers.HandleGetMapByID))
 	//TODO: get user Player loadout
 	// e.GET("/game/wasm/user/:id", middleware.MiddleWareGameAuth())
 

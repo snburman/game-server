@@ -15,6 +15,7 @@ require (
 	github.com/gorilla/context v1.1.2 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/gorilla/sessions v1.4.0 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/labstack/echo-contrib v0.17.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/stytchauth/stytch-go/v15 v15.10.0 // indirect

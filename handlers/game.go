@@ -20,9 +20,9 @@ func HandleAuthGame(c echo.Context) error {
 }
 
 func HandleGetGame(c echo.Context) error {
-	id := c.Param("mapID")
+	mapID := c.Param("id")
 	token := c.QueryParam("token")
-	if id == "" || token == "" {
+	if mapID == "" || token == "" {
 		return c.JSON(
 			http.StatusBadRequest,
 			errors.ErrMissingParams.JSON(),
@@ -37,11 +37,13 @@ func HandleGetGame(c echo.Context) error {
 		)
 	}
 
+	// create Connection entry
+
 	entry := []byte(fmt.Sprintf(
 		`
 		<!DOCTYPE html>
 		<script src="http://localhost:9191/wasm_exec.js"></script>
-		<script>function id() { return %s}</script>
+		<script>function id() { return %s }</script>
 		<script>
 		// Polyfill
 		if (!WebAssembly.instantiateStreaming) {
