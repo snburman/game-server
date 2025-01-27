@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/snburman/game_server/errors"
 	"github.com/snburman/game_server/middleware"
+	"github.com/snburman/game_server/utils"
 )
 
 func HandleAuthGame(c echo.Context) error {
@@ -21,26 +21,21 @@ func HandleAuthGame(c echo.Context) error {
 
 func HandleGetGame(c echo.Context) error {
 	id := c.Param("mapID")
-	if id == "" {
+	token := c.QueryParam("token")
+	if id == "" || token == "" {
 		return c.JSON(
 			http.StatusBadRequest,
 			errors.ErrMissingParams.JSON(),
 		)
 	}
 
-	claims, ok := c.(middleware.JWTContext)
-	if !ok {
-		return c.JSON(http.StatusUnauthorized, AuthResponse{
-			ServerError: errors.ErrInvalidJWT,
-		})
+	claims, err := utils.DecodeJWT(token)
+	if err != nil || claims.UserID == "" {
+		return c.JSON(
+			http.StatusUnauthorized,
+			errors.AuthenticationError(errors.ErrInvalidJWT).JSON(),
+		)
 	}
-	fmt.Println(claims.UserID)
-
-	connectionID := uuid.New()
-
-	//TODO: provide connection ID for websocket
-
-	//TODO:
 
 	entry := []byte(fmt.Sprintf(
 		`
@@ -61,9 +56,7 @@ func HandleGetGame(c echo.Context) error {
 			go.run(result.instance);
 		});
 		</script>
-		`, connectionID.String()))
-
-	c.Response().Header().Set("CONNECTION_ID", connectionID.String())
+		`, claims.UserID))
 
 	return c.HTMLBlob(200, entry)
 }

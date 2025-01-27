@@ -66,7 +66,6 @@ func GenerateAssets() {
 		panic(err)
 	}
 
-	GenerateSprites(&assetConf)
 	writeAssetsData(assetConf)
 }
 
