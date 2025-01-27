@@ -3,3 +3,4 @@
 *tailwindcss*
 .DS_Store
 coverage.out
+__debug*

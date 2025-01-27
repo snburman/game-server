@@ -33,7 +33,7 @@ func MiddlewareClientCredentials(next echo.HandlerFunc) echo.HandlerFunc {
 			)
 		}
 		// compare credentials
-		if creds.ClientID != config.Env().ClientID || creds.ClientSecret != config.Env().ClientSecret {
+		if creds.ClientID != config.Env().CLIENT_ID || creds.ClientSecret != config.Env().CLIENT_SECRET {
 			return c.JSON(
 				http.StatusUnauthorized,
 				errors.ServerError(errors.ErrInvalidCredentials).JSON(),
@@ -69,4 +69,16 @@ func UnmarshalClientDataContext[T any](c echo.Context) (T, error) {
 	}
 
 	return data, nil
+}
+
+func MiddleWareGameAuth(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		clientID := c.Request().Header.Get("CLIENT_ID")
+		clientSecret := c.Request().Header.Get("CLIENT_SECRET")
+
+		if clientID != config.Env().CLIENT_ID || clientSecret != config.Env().CLIENT_SECRET {
+			return c.NoContent(http.StatusUnauthorized)
+		}
+		return next(c)
+	}
 }

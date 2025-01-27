@@ -37,7 +37,13 @@ func main() {
 	e.DELETE("/user/delete", middleware.MiddlewareJWT(authService.HandleDeleteUser))
 
 	// game
-	e.GET("/game", handlers.HandleGetGame)
+	//
+	// initiated by game client to retrieve wasm with map by ID
+	e.GET("/game/client/:mapID", handlers.HandleGetGame)
+	// initiated by game wasm to retrieve map by IDx
+	e.GET("/game/wasm/map/:id", middleware.MiddleWareGameAuth(handlers.HandleGetMapByID))
+	//TODO: get user Player loadout
+	// e.GET("/game/wasm/user/:id", middleware.MiddleWareGameAuth())
 
 	// assets
 	//
@@ -50,7 +56,6 @@ func main() {
 	e.DELETE("/assets/player", middleware.MiddlewareJWT(handlers.HandleDeletePlayerAsset))
 
 	// maps
-	e.GET("/maps", middleware.MiddlewareJWT(handlers.HandleGetAllMaps))
 	e.GET("/maps/:id", middleware.MiddlewareJWT(handlers.HandleGetMapByID))
 	e.POST("/maps", middleware.MiddlewareJWT(handlers.HandleCreateMap))
 	e.GET("/maps/player", middleware.MiddlewareJWT(handlers.HandleGetPlayerMaps))

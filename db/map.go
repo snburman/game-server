@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/snburman/game_server/errors"
+	"github.com/snburman/game_server/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -58,6 +59,34 @@ func CreateMap(db DatabaseClient, m Map[string]) (primitive.ObjectID, error) {
 		return primitive.NilObjectID, err
 	}
 	return insertedID, nil
+}
+
+func GetMapByID(db DatabaseClient, ID string) (Map[[]PlayerAsset[PixelData]], error) {
+	_map := *new(Map[[]PlayerAsset[PixelData]])
+	_id, err := primitive.ObjectIDFromHex(ID)
+	if err != nil {
+		return _map, err
+	}
+
+	res, err := db.GetOne(bson.M{"_id": _id}, mapsDBOptions)
+	if err != nil {
+		return _map, err
+	}
+	var bm Map[[]byte]
+	if err = utils.UnmarshalBSON(res, &bm); err != nil {
+		return _map, err
+	}
+	err = json.Unmarshal(bm.Data, &_map.Data)
+	if err != nil {
+		return _map, err
+	}
+	_map.ID = bm.ID
+	_map.UserID = bm.UserID
+	_map.Name = bm.Name
+	_map.Entrance = bm.Entrance
+	_map.Portals = bm.Portals
+
+	return _map, nil
 }
 
 func GetMapsByUserID(db DatabaseClient, userID string) ([]Map[[]PlayerAsset[PixelData]], error) {

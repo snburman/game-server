@@ -4,6 +4,7 @@ const (
 	ErrMissingParams  ServerError = "missing_params"
 	ErrInvalidJWT     ServerError = "invalid_jwt"
 	ErrBindingPayload ServerError = "error_binding_payload"
+	ErrServerError    ServerError = "server_error"
 )
 
 type ServerError string
