@@ -114,3 +114,33 @@ func GetMapsByUserID(db DatabaseClient, userID string) ([]Map[[]PlayerAsset[Pixe
 
 	return maps, nil
 }
+
+func UpdateMap(db DatabaseClient, m Map[string]) error {
+	// convert data to bytes
+	byteMap := Map[[]byte]{
+		UserID:   m.UserID,
+		Name:     m.Name,
+		Entrance: m.Entrance,
+		Portals:  m.Portals,
+		Data:     []byte(m.Data),
+	}
+
+	_, err := db.UpdateOne(m.ID.Hex(), byteMap, mapsDBOptions)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteMap(db DatabaseClient, ID string) error {
+	_id, err := primitive.ObjectIDFromHex(ID)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Delete(bson.M{"_id": _id}, mapsDBOptions)
+	if err != nil {
+		return err
+	}
+	return nil
+}

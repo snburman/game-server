@@ -4,20 +4,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
+	"github.com/snburman/game_server/config"
+	"github.com/snburman/game_server/conn"
+	"github.com/snburman/game_server/db"
 	"github.com/snburman/game_server/errors"
-	"github.com/snburman/game_server/middleware"
 	"github.com/snburman/game_server/utils"
 )
-
-func HandleAuthGame(c echo.Context) error {
-	userID, err := middleware.UnmarshalClientDataContext[string](c)
-	if err != nil {
-		return err
-	}
-	fmt.Println(userID)
-	return nil
-}
 
 func HandleGetGame(c echo.Context) error {
 	mapID := c.Param("id")
@@ -33,16 +27,31 @@ func HandleGetGame(c echo.Context) error {
 	if err != nil || claims.UserID == "" {
 		return c.JSON(
 			http.StatusUnauthorized,
-			errors.AuthenticationError(errors.ErrInvalidJWT).JSON(),
+			errors.ErrInvalidJWT.JSON(),
 		)
 	}
 
+	// get user
+	user, err := db.GetUserByID(db.MongoDB, claims.UserID)
+	if err != nil {
+		return c.JSON(
+			http.StatusUnauthorized,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
 	// create Connection entry
-
+	err = conn.NewConnection(user)
+	if err != nil {
+		return c.JSON(
+			http.StatusBadRequest,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+	host := config.Env().HOST
+	port := config.Env().PORT
 	entry := []byte(fmt.Sprintf(
-		`
-		<!DOCTYPE html>
-		<script src="http://localhost:9191/wasm_exec.js"></script>
+		`<!DOCTYPE html>
+		<script src="%s:%s/wasm_exec.js"></script>
 		<script>function id() { return %s }</script>
 		<script>
 		// Polyfill
@@ -54,11 +63,38 @@ func HandleGetGame(c echo.Context) error {
 		}
 
 		const go = new Go();
-		WebAssembly.instantiateStreaming(fetch("http://localhost:9191/game.wasm"), go.importObject).then(result => {
+		WebAssembly.instantiateStreaming(fetch("%s:%s/game.wasm"), go.importObject).then(result => {
 			go.run(result.instance);
 		});
-		</script>
-		`, claims.UserID))
+		</script>`, host, port, claims.UserID, host, port))
 
 	return c.HTMLBlob(200, entry)
+}
+
+func HandleConnectClient(c echo.Context) error {
+	id := c.QueryParam("id")
+	if id == "" {
+		return c.JSON(
+			http.StatusBadRequest,
+			errors.ErrMissingParams.JSON(),
+		)
+	}
+
+	// create new websocket connection
+	upgrader := &websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+
+	// set connection
+	conn.SetClient(id, ws)
+	return c.JSON(http.StatusOK, "connected")
 }
