@@ -40,10 +40,9 @@ func main() {
 	//
 	// initiated by game client to retrieve wasm with map by ID
 	e.GET("/game/client/map/:id", handlers.HandleGetGame)
+	e.GET("/game/client/connect", handlers.HandleConnectClient)
 	// initiated by game wasm to retrieve map by ID
 	e.GET("/game/wasm/map/:id", middleware.MiddleWareClientHeaders(handlers.HandleGetMapByID))
-	//TODO: get user Player loadout
-	// e.GET("/game/wasm/user/:id", middleware.MiddleWareGameAuth())
 
 	// assets
 	//
@@ -62,13 +61,14 @@ func main() {
 	e.PATCH("/maps", middleware.MiddlewareJWT(handlers.HandleUpdateMap))
 	e.DELETE("/maps/:id", middleware.MiddlewareJWT(handlers.HandleDeleteMap))
 
-	// prefabricated assets
-
+	// database
 	db.NewMongoDriver()
 
 	PORT := os.Getenv("PORT")
 	if PORT == "" {
 		PORT = ":9191"
+	} else {
+		PORT = ":" + PORT
 	}
 	e.Logger.Fatal(e.Start(PORT))
 }

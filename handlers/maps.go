@@ -80,9 +80,74 @@ func HandleCreateMap(c echo.Context) error {
 }
 
 func HandleUpdateMap(c echo.Context) error {
-	return nil
+	claims, ok := c.(middleware.JWTContext)
+	if !ok {
+		return c.JSON(
+			http.StatusUnauthorized,
+			errors.ServerError(errors.ErrInvalidJWT).JSON())
+	}
+
+	_map := *new(db.Map[string])
+	if err := c.Bind(&_map); err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ErrBindingPayload.JSON(),
+		)
+	}
+
+	if claims.UserID != _map.UserID {
+		return c.JSON(
+			http.StatusUnauthorized,
+			errors.ServerError(errors.ErrInvalidJWT).JSON())
+	}
+
+	err := db.UpdateMap(db.MongoDB, _map)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+
+	return c.NoContent(http.StatusAccepted)
 }
 
 func HandleDeleteMap(c echo.Context) error {
-	return nil
+	claims, ok := c.(middleware.JWTContext)
+	if !ok {
+		return c.JSON(
+			http.StatusUnauthorized,
+			errors.ServerError(errors.ErrInvalidJWT).JSON())
+	}
+
+	id := c.Param("id")
+	if id == "" {
+		return c.JSON(
+			http.StatusBadRequest,
+			errors.ErrMissingParams.JSON())
+	}
+
+	_map, err := db.GetMapByID(db.MongoDB, id)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+
+	if claims.UserID != _map.UserID {
+		return c.JSON(
+			http.StatusUnauthorized,
+			errors.ServerError(errors.ErrInvalidJWT).JSON())
+	}
+
+	err = db.DeleteMap(db.MongoDB, id)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+
+	return c.NoContent(http.StatusAccepted)
 }
