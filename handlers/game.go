@@ -115,7 +115,7 @@ func HandleGetGame(c echo.Context) error {
 	entry := []byte(fmt.Sprintf(
 		`<!DOCTYPE html>
 		<script src="%s:%s/wasm_exec.js"></script>
-		<script>const id = %s</script>
+		<script>function id() {return "%s"}</script>
 		<script>
 		// Polyfill
 		if (!WebAssembly.instantiateStreaming) {
