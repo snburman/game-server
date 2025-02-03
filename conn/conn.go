@@ -16,10 +16,10 @@ const PING_TIMEOUT = 3 * PING_FREQUENCY
 var ConnPool = NewConnectionPool()
 
 type Connection struct {
-	Client   *websocket.Conn
-	Wasm     *websocket.Conn
 	User     db.User
 	lastPing time.Duration
+	Client   *Socket
+	Wasm     *Socket
 }
 
 // Connection is initialized with a user and added to the connection pool by key user.ID.Hex()
@@ -29,56 +29,34 @@ func NewConnection(user db.User) error {
 	c := &Connection{
 		User: user,
 	}
-	_, err := ConnPool.Get(user.ID.Hex())
-	if err == nil {
-		err = errors.ErrConnectionExists
-		log.Println(err.Error() + ": " + user.ID.Hex())
-		return err
-	}
 	ConnPool.set(user.ID.Hex(), c)
 	return nil
 }
 
-func SetClient(id string, conn *websocket.Conn) {
+func SetClient(id string, conn *websocket.Conn) error {
 	_conn, err := ConnPool.Get(id)
 	if err != nil {
 		log.Println(err.Error() + ": " + id)
-		return
+		return err
 	}
-	_conn.Client = conn
+	_conn.Client = NewSocket(id, conn)
 	ConnPool.set(id, &_conn)
+	return nil
 }
 
-func SetWasm(id string, conn *websocket.Conn) {
+func SetWasm(id string, conn *websocket.Conn) error {
 	_conn, err := ConnPool.Get(id)
 	if err != nil {
 		log.Println(err.Error() + ": " + id)
-		return
+		return err
 	}
-	_conn.Wasm = conn
+	_conn.Wasm = NewSocket(id, conn)
 	ConnPool.set(id, &_conn)
+	return nil
 }
 
 func (c *Connection) Close() {
 	ConnPool.Remove(c.User.ID.Hex())
-}
-
-func (c Connection) MessageClient(m []byte) {
-	if c.Client != nil {
-		err := c.Client.WriteMessage(websocket.TextMessage, m)
-		if err != nil {
-			log.Println(err)
-			if err == websocket.ErrCloseSent {
-				c.Client.Close()
-			}
-		}
-	}
-}
-
-func (c Connection) MessageWasm(m []byte) {
-	if c.Wasm != nil {
-		c.Wasm.WriteMessage(websocket.TextMessage, m)
-	}
 }
 
 type ConnectionPool struct {
@@ -117,22 +95,22 @@ func (cp *ConnectionPool) Remove(key string) {
 }
 
 func (cp *ConnectionPool) ping() {
-	for {
-		cp.mu.Lock()
-		for key, conn := range cp.connections {
-			conn.lastPing += PING_FREQUENCY
-			if conn.lastPing > PING_TIMEOUT {
-				cp.Remove(key)
-				continue
-			}
-			if cp.connections[key].Client == nil || cp.connections[key].Wasm == nil {
-				return
-			}
-			cp.connections[key].Client.WriteMessage(websocket.PingMessage, []byte{})
-			cp.connections[key].Wasm.WriteMessage(websocket.PingMessage, []byte{})
-			conn.lastPing = 0
-		}
-		cp.mu.Unlock()
-		time.Sleep(PING_FREQUENCY)
-	}
+	// for {
+	// 	cp.mu.Lock()
+	// 	for key, conn := range cp.connections {
+	// 		conn.lastPing += PING_FREQUENCY
+	// 		if conn.lastPing > PING_TIMEOUT {
+	// 			cp.Remove(key)
+	// 			continue
+	// 		}
+	// 		if cp.connections[key].Client == nil || cp.connections[key].Wasm == nil {
+	// 			return
+	// 		}
+	// 		cp.connections[key].Client.Ping()
+	// 		cp.connections[key].Wasm.Ping()
+	// 		conn.lastPing = 0
+	// 	}
+	// 	cp.mu.Unlock()
+	// 	time.Sleep(PING_FREQUENCY)
+	// }
 }

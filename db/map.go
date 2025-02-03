@@ -89,11 +89,37 @@ func GetMapByID(db DatabaseClient, ID string) (Map[[]PlayerAsset[PixelData]], er
 	return _map, nil
 }
 
+func GetMapByNameUserID(db DatabaseClient, name, userID string) (Map[[]PlayerAsset[PixelData]], error) {
+	_map := *new(Map[[]PlayerAsset[PixelData]])
+	res, err := db.GetOne(bson.M{"user_id": userID, "name": name}, mapsDBOptions)
+	if err != nil {
+		return _map, errors.ErrMapNotFound
+	}
+
+	var bm Map[[]byte]
+	if err = utils.UnmarshalBSON(res, &bm); err != nil {
+		return _map, err
+	}
+
+	// unmarshal data field from []byte to PixelData
+	if err = json.Unmarshal(bm.Data, &_map.Data); err != nil {
+		return _map, errors.ErrMapWrongFormat
+	}
+	// copy properties
+	_map.ID = bm.ID
+	_map.UserID = bm.UserID
+	_map.Name = bm.Name
+	_map.Entrance = bm.Entrance
+	_map.Portals = bm.Portals
+
+	return _map, nil
+}
+
 func GetMapsByUserID(db DatabaseClient, userID string) ([]Map[[]PlayerAsset[PixelData]], error) {
 	var byteMaps []Map[[]byte]
 	err := db.Get(bson.M{"user_id": userID}, mapsDBOptions, &byteMaps)
 	if err != nil {
-		return nil, err
+		return nil, errors.ErrMapNotFound
 	}
 
 	var maps []Map[[]PlayerAsset[PixelData]]

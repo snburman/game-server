@@ -2,27 +2,26 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
-	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/snburman/game_server/config"
 	"github.com/snburman/game_server/conn"
 	"github.com/snburman/game_server/db"
 	"github.com/snburman/game_server/errors"
+	"github.com/snburman/game_server/middleware"
 	"github.com/snburman/game_server/utils"
 )
 
-func HandleGetGame(c echo.Context) error {
-	mapID := c.Param("id")
+func HandleClientConnect(c echo.Context) error {
 	token := c.QueryParam("token")
-	if mapID == "" || token == "" {
+	if token == "" {
 		return c.JSON(
 			http.StatusBadRequest,
 			errors.ErrMissingParams.JSON(),
 		)
 	}
-
 	claims, err := utils.DecodeJWT(token)
 	if err != nil || claims.UserID == "" {
 		return c.JSON(
@@ -47,12 +46,76 @@ func HandleGetGame(c echo.Context) error {
 			errors.ServerError(err.Error()).JSON(),
 		)
 	}
+
+	ctx, ok := c.(middleware.WebSocketContext)
+	if !ok {
+		log.Println("missing websocket context")
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ErrServerError.JSON(),
+		)
+	}
+
+	// set connection
+	err = conn.SetClient(claims.UserID, ctx.Ws)
+	if err != nil {
+		ctx.Ws.Close()
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	conn, err := conn.ConnPool.Get(claims.UserID)
+	if err != nil {
+		log.Println(err)
+		ctx.Ws.Close()
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ErrConnectionNotFound.JSON(),
+		)
+	}
+	conn.Client.Write("hello")
+	for {
+		// read message
+		msg, err := conn.Client.Read()
+		if err != nil {
+			log.Println(err)
+			break
+		}
+		conn.Client.Write(msg)
+	}
+	return nil
+}
+
+func HandleGetGame(c echo.Context) error {
+	token := c.QueryParam("token")
+	if token == "" {
+		return c.JSON(
+			http.StatusBadRequest,
+			errors.ErrMissingParams.JSON(),
+		)
+	}
+	claims, err := utils.DecodeJWT(token)
+	if err != nil || claims.UserID == "" {
+		return c.JSON(
+			http.StatusUnauthorized,
+			errors.ErrInvalidJWT.JSON(),
+		)
+	}
+
+	// check for connection
+	_, err = conn.ConnPool.Get(claims.UserID)
+	if err != nil {
+		return c.JSON(
+			http.StatusUnauthorized,
+			errors.ErrConnectionNotFound.JSON(),
+		)
+	}
+
 	host := config.Env().HOST
 	port := config.Env().PORT
 	entry := []byte(fmt.Sprintf(
 		`<!DOCTYPE html>
 		<script src="%s:%s/wasm_exec.js"></script>
-		<script>function id() { return %s }</script>
+		<script>const id = %s</script>
 		<script>
 		// Polyfill
 		if (!WebAssembly.instantiateStreaming) {
@@ -69,32 +132,4 @@ func HandleGetGame(c echo.Context) error {
 		</script>`, host, port, claims.UserID, host, port))
 
 	return c.HTMLBlob(200, entry)
-}
-
-func HandleConnectClient(c echo.Context) error {
-	id := c.QueryParam("id")
-	if id == "" {
-		return c.JSON(
-			http.StatusBadRequest,
-			errors.ErrMissingParams.JSON(),
-		)
-	}
-
-	// create new websocket connection
-	upgrader := &websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
-	}
-	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
-	if err != nil {
-		return c.JSON(
-			http.StatusInternalServerError,
-			errors.ServerError(err.Error()).JSON(),
-		)
-	}
-
-	// set connection
-	conn.SetClient(id, ws)
-	return c.JSON(http.StatusOK, "connected")
 }

@@ -71,7 +71,7 @@ func HandleCreateMap(c echo.Context) error {
 		log.Println(err)
 		return c.JSON(
 			http.StatusNotAcceptable,
-			errors.ErrCreatingMap.JSON(),
+			errors.ServerError(err.Error()).JSON(),
 		)
 	}
 	return c.JSON(http.StatusAccepted, db.InsertedIDResponse{
@@ -101,7 +101,16 @@ func HandleUpdateMap(c echo.Context) error {
 			errors.ServerError(errors.ErrInvalidJWT).JSON())
 	}
 
-	err := db.UpdateMap(db.MongoDB, _map)
+	existingMap, err := db.GetMapByNameUserID(db.MongoDB, _map.Name, _map.UserID)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+
+	_map.ID = existingMap.ID
+	err = db.UpdateMap(db.MongoDB, _map)
 	if err != nil {
 		return c.JSON(
 			http.StatusInternalServerError,

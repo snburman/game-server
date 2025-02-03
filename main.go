@@ -38,9 +38,8 @@ func main() {
 
 	// game
 	//
-	// initiated by game client to retrieve wasm with map by ID
-	e.GET("/game/client/map/:id", handlers.HandleGetGame)
-	e.GET("/game/client/connect", handlers.HandleConnectClient)
+	e.GET("/game/client/connect", middleware.MiddlewareWebSocket(handlers.HandleClientConnect))
+	e.GET("/game/client", handlers.HandleGetGame)
 	// initiated by game wasm to retrieve map by ID
 	e.GET("/game/wasm/map/:id", middleware.MiddleWareClientHeaders(handlers.HandleGetMapByID))
 
