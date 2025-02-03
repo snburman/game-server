@@ -29,6 +29,25 @@ func HandleGetMapByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, _map)
 }
 
+func HandleGetPrimaryMap(c echo.Context) error {
+	userID := c.Param("userID")
+	if userID == "" {
+		return c.JSON(
+			http.StatusBadRequest,
+			errors.ErrMissingParams.JSON(),
+		)
+	}
+
+	_map, err := db.GetPrimaryMapByUserID(db.MongoDB, userID)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+	return c.JSON(http.StatusOK, _map)
+}
+
 func HandleGetPlayerMaps(c echo.Context) error {
 	claims, ok := c.(middleware.JWTContext)
 	if !ok {

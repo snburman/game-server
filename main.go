@@ -42,6 +42,7 @@ func main() {
 	e.GET("/game/client", handlers.HandleGetGame)
 	// initiated by game wasm to retrieve map by ID
 	e.GET("/game/wasm/map/:id", middleware.MiddleWareClientHeaders(handlers.HandleGetMapByID))
+	e.GET("/game/wasm/map/primary/:userID", middleware.MiddleWareClientHeaders(handlers.HandleGetPrimaryMap))
 
 	// assets
 	//
