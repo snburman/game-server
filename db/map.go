@@ -25,6 +25,7 @@ type Map[T any] struct {
 	ID       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	UserID   string             `json:"user_id" bson:"user_id"`
 	Name     string             `json:"name" bson:"name"`
+	Primary  bool               `json:"primary" bson:"primary"`
 	Entrance struct {
 		X int `json:"x" bson:"x"`
 		Y int `json:"y" bson:"y"`
@@ -40,10 +41,27 @@ func CreateMap(db DatabaseClient, m Map[string]) (primitive.ObjectID, error) {
 		return primitive.NilObjectID, errors.ErrMapExists
 	}
 
+	// check if primary map already exists
+	if m.Primary {
+		res, err := db.GetOne(bson.M{"user_id": m.UserID, "primary": true}, mapsDBOptions)
+		if err == nil {
+			var bm Map[[]byte]
+			if err = utils.UnmarshalBSON(res, &bm); err != nil {
+				return primitive.NilObjectID, errors.ErrCreatingMap
+			}
+			bm.Primary = false
+			_, err = db.UpdateOne(bm.ID.Hex(), bm, mapsDBOptions)
+			if err != nil {
+				return primitive.NilObjectID, errors.ErrCreatingMap
+			}
+		}
+	}
+
 	// convert data to bytes
 	byteMap := Map[[]byte]{
 		UserID:   m.UserID,
 		Name:     m.Name,
+		Primary:  m.Primary,
 		Entrance: m.Entrance,
 		Portals:  m.Portals,
 		Data:     []byte(m.Data),
@@ -83,6 +101,7 @@ func GetMapByID(db DatabaseClient, ID string) (Map[[]PlayerAsset[PixelData]], er
 	_map.ID = bm.ID
 	_map.UserID = bm.UserID
 	_map.Name = bm.Name
+	_map.Primary = bm.Primary
 	_map.Entrance = bm.Entrance
 	_map.Portals = bm.Portals
 
@@ -109,6 +128,7 @@ func GetMapByNameUserID(db DatabaseClient, name, userID string) (Map[[]PlayerAss
 	_map.ID = bm.ID
 	_map.UserID = bm.UserID
 	_map.Name = bm.Name
+	_map.Primary = bm.Primary
 	_map.Entrance = bm.Entrance
 	_map.Portals = bm.Portals
 
@@ -133,6 +153,7 @@ func GetMapsByUserID(db DatabaseClient, userID string) ([]Map[[]PlayerAsset[Pixe
 		_map.ID = bm.ID
 		_map.UserID = bm.UserID
 		_map.Name = bm.Name
+		_map.Primary = bm.Primary
 		_map.Entrance = bm.Entrance
 		_map.Portals = bm.Portals
 		maps = append(maps, *_map)
@@ -142,10 +163,26 @@ func GetMapsByUserID(db DatabaseClient, userID string) ([]Map[[]PlayerAsset[Pixe
 }
 
 func UpdateMap(db DatabaseClient, m Map[string]) error {
+	if m.Primary {
+		res, err := db.GetOne(bson.M{"user_id": m.UserID, "primary": true}, mapsDBOptions)
+		if err == nil {
+			var bm Map[[]byte]
+			if err = utils.UnmarshalBSON(res, &bm); err != nil {
+				return errors.ErrUpdatingMap
+			}
+			bm.Primary = false
+			_, err = db.UpdateOne(bm.ID.Hex(), bm, mapsDBOptions)
+			if err != nil {
+				return errors.ErrUpdatingMap
+			}
+		}
+	}
+
 	// convert data to bytes
 	byteMap := Map[[]byte]{
 		UserID:   m.UserID,
 		Name:     m.Name,
+		Primary:  m.Primary,
 		Entrance: m.Entrance,
 		Portals:  m.Portals,
 		Data:     []byte(m.Data),
