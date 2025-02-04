@@ -45,6 +45,21 @@ func HandleGetPrimaryMap(c echo.Context) error {
 			errors.ServerError(err.Error()).JSON(),
 		)
 	}
+	// add character assets
+	charAssets, err := db.GetPlayerCharacterAssetsByUserID(db.MongoDB, userID)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+	// set character assets x,y to entrance
+	for i := range charAssets {
+		charAssets[i].X = _map.Entrance.X
+		charAssets[i].Y = _map.Entrance.Y
+	}
+	_map.Data = append(_map.Data, charAssets...)
+
 	return c.JSON(http.StatusOK, _map)
 }
 
