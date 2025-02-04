@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 
@@ -95,6 +96,57 @@ func GetPlayerAssetsByUserID(db DatabaseClient, userID string) ([]PlayerAsset[Pi
 		return assets, err
 	}
 
+	for _, img := range byteAssets {
+		_img := new(PlayerAsset[PixelData])
+		// decode the json string
+		err := json.Unmarshal(img.Data, &_img.Data)
+		if err != nil {
+			log.Println("error decoding image: ", err)
+			return assets, err
+		}
+		_img.ID = img.ID
+		_img.UserID = img.UserID
+		_img.Name = img.Name
+		_img.AssetType = img.AssetType
+		_img.Width = img.Width
+		_img.Height = img.Height
+		assets = append(assets, *_img)
+	}
+
+	return assets, nil
+}
+
+func GetPlayerCharacterAssetsByUserID(db DatabaseClient, userID string) ([]PlayerAsset[PixelData], error) {
+	filter := bson.A{
+		bson.D{{
+			Key: "$match", Value: bson.D{
+				{Key: "user_id", Value: userID},
+				{Key: "$or", Value: bson.A{
+					bson.D{{Key: "asset_type", Value: ASSET_PLAYER_UP}},
+					bson.D{{Key: "asset_type", Value: ASSET_PLAYER_DOWN}},
+					bson.D{{Key: "asset_type", Value: ASSET_PLAYER_LEFT}},
+					bson.D{{Key: "asset_type", Value: ASSET_PLAYER_RIGHT}},
+				}},
+			},
+		}},
+	}
+	assets := []PlayerAsset[PixelData]{}
+	// get assets with byte data
+	byteAssets := []PlayerAsset[[]byte]{}
+	cursor, err := MongoDB.Client.
+		Database(assetDBOptions.Database).
+		Collection(assetDBOptions.Table).
+		Aggregate(context.Background(), filter)
+	if err != nil {
+		return assets, err
+	}
+	defer cursor.Close(context.Background())
+	err = cursor.All(context.Background(), &byteAssets)
+	if err != nil {
+		return assets, err
+	}
+
+	// unmarshal data from []byte to PixelData
 	for _, img := range byteAssets {
 		_img := new(PlayerAsset[PixelData])
 		// decode the json string
