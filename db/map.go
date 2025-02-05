@@ -29,7 +29,7 @@ type Map[T any] struct {
 	Entrance struct {
 		X int `json:"x" bson:"x"`
 		Y int `json:"y" bson:"y"`
-	}
+	} `json:"entrance" bson:"entrance"`
 	Portals []Portal `json:"portals" bson:"portals"`
 	Data    T        `json:"data" bson:"data"`
 }
