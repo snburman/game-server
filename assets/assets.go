@@ -3,7 +3,6 @@ package assets
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -83,51 +82,4 @@ func writeAssetsData(assetConf Assets) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-// Load loads the assets from the data.assets.json file
-func Load() *Assets {
-	// // Make get request
-	// res, err := http.Get("http://localhost:9191/data.assets.json")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer res.Body.Close()
-	// bts, err := io.ReadAll(res.Body)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// var assets1 Assets
-	// err = json.Unmarshal(bts, &assets1)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println(assets1)
-
-	file, err := os.Open("assets/data.assets.json")
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-	b, err := io.ReadAll(file)
-	if err != nil {
-		panic(err)
-	}
-	var assets Assets
-	err = json.Unmarshal(b, &assets)
-	if err != nil {
-		fmt.Println("HERE")
-		panic(err)
-	}
-
-	for key, sprite := range assets.Images.Sprites {
-		img, err := imageFromBytes(sprite.Data)
-		if err != nil {
-			panic(err)
-		}
-		sprite.Image = img
-		assets.Images.Sprites[key] = sprite
-	}
-
-	return &assets
 }

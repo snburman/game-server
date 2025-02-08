@@ -5,8 +5,6 @@ import (
 	"image"
 	"image/png"
 	"io"
-
-	"github.com/hajimehoshi/ebiten/v2"
 )
 
 const (
@@ -14,13 +12,12 @@ const (
 )
 
 type Image struct {
-	Name          string      `json:"name"`
-	Path          string      `json:"path"`
-	Width         int         `json:"width"`
-	Height        int         `json:"height"`
-	Frames        []FrameSpec `json:"frames"`
-	Data          []byte      `json:"data"`
-	*ebiten.Image `json:"-"`
+	Name   string      `json:"name"`
+	Path   string      `json:"path"`
+	Width  int         `json:"width"`
+	Height int         `json:"height"`
+	Frames []FrameSpec `json:"frames"`
+	Data   []byte      `json:"data"`
 }
 
 func pngBytesFromFile(file io.Reader) ([]byte, error) {
@@ -34,13 +31,4 @@ func pngBytesFromFile(file io.Reader) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
-}
-
-func imageFromBytes(data []byte) (*ebiten.Image, error) {
-	img, _, err := image.Decode(bytes.NewReader(data))
-	if err != nil {
-		return nil, err
-	}
-	eImg := ebiten.NewImageFromImage(img)
-	return eImg, err
 }
