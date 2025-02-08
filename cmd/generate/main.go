@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 
-	"github.com/snburman/game_server/assets"
-	"github.com/snburman/game_server/db"
+	"github.com/snburman/game-server/assets"
+	"github.com/snburman/game-server/db"
 )
 
 func main() {

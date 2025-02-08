@@ -6,12 +6,12 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/snburman/game_server/config"
-	"github.com/snburman/game_server/conn"
-	"github.com/snburman/game_server/db"
-	"github.com/snburman/game_server/errors"
-	"github.com/snburman/game_server/middleware"
-	"github.com/snburman/game_server/utils"
+	"github.com/snburman/game-server/config"
+	"github.com/snburman/game-server/conn"
+	"github.com/snburman/game-server/db"
+	"github.com/snburman/game-server/errors"
+	"github.com/snburman/game-server/middleware"
+	"github.com/snburman/game-server/utils"
 )
 
 func HandleClientConnect(c echo.Context) error {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
-	"github.com/snburman/game_server/errors"
+	"github.com/snburman/game-server/errors"
 )
 
 type WebSocketContext struct {

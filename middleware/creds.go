@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/snburman/game_server/config"
-	"github.com/snburman/game_server/errors"
+	"github.com/snburman/game-server/config"
+	"github.com/snburman/game-server/errors"
 )
 
 type ClientCredentialsDTO struct {

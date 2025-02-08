@@ -1,4 +1,4 @@
-module github.com/snburman/game_server
+module github.com/snburman/game-server
 
 go 1.23
 

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/snburman/game_server/db"
-	"github.com/snburman/game_server/errors"
+	"github.com/snburman/game-server/db"
+	"github.com/snburman/game-server/errors"
 )
 
 const PING_FREQUENCY = 30 * time.Second
