@@ -6,7 +6,7 @@ import (
 	"image/png"
 	"io"
 
-	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 const (
@@ -41,6 +41,6 @@ func imageFromBytes(data []byte) (*ebiten.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	eImg, err := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	eImg := ebiten.NewImageFromImage(img)
 	return eImg, err
 }
