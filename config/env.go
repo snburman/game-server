@@ -10,7 +10,7 @@ import (
 
 // Environment variables
 type Vars struct {
-	SERVER_HOST   string
+	SERVER_URL    string
 	PORT          string
 	MONGO_URI     string
 	SECRET        string
@@ -29,7 +29,7 @@ func Env() Vars {
 	}
 
 	return Vars{
-		SERVER_HOST:   os.Getenv("SERVER_HOST"),
+		SERVER_URL:    os.Getenv("SERVER_URL"),
 		PORT:          os.Getenv("PORT"),
 		MONGO_URI:     os.Getenv("MONGO_URI"),
 		SECRET:        os.Getenv("SECRET"),

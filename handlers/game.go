@@ -110,7 +110,7 @@ func HandleGetGame(c echo.Context) error {
 		)
 	}
 
-	host := config.Env().SERVER_HOST
+	host := config.Env().SERVER_URL
 	port := config.Env().PORT
 	entry := []byte(fmt.Sprintf(
 		`<!DOCTYPE html>
