@@ -112,6 +112,7 @@ func HandleGetGame(c echo.Context) error {
 
 	host := config.Env().HOST
 	port := config.Env().PORT
+
 	entry := []byte(fmt.Sprintf(
 		`<!DOCTYPE html>
 		<script src="%s:%s/wasm_exec.js"></script>
