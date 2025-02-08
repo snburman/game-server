@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/snburman/game_server/config"
-	"github.com/snburman/game_server/utils"
+	"github.com/snburman/game-server/config"
+	"github.com/snburman/game-server/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

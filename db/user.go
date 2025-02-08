@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/snburman/game_server/utils"
+	"github.com/snburman/game-server/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )

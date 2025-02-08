@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/snburman/game_server/db"
-	"github.com/snburman/game_server/errors"
-	"github.com/snburman/game_server/middleware"
+	"github.com/snburman/game-server/db"
+	"github.com/snburman/game-server/errors"
+	"github.com/snburman/game-server/middleware"
 )
 
 func HandleGetMapByID(c echo.Context) error {

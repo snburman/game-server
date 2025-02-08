@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/labstack/echo/v4"
-	"github.com/snburman/game_server/db"
-	"github.com/snburman/game_server/handlers"
-	"github.com/snburman/game_server/middleware"
+	"github.com/snburman/game-server/db"
+	"github.com/snburman/game-server/handlers"
+	"github.com/snburman/game-server/middleware"
 )
 
 func main() {

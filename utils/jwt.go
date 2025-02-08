@@ -8,7 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
-	"github.com/snburman/game_server/config"
+	"github.com/snburman/game-server/config"
 )
 
 type JWTClaims struct {

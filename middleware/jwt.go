@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/snburman/game_server/errors"
-	"github.com/snburman/game_server/utils"
+	"github.com/snburman/game-server/errors"
+	"github.com/snburman/game-server/utils"
 )
 
 type JWTContext struct {
