@@ -111,10 +111,9 @@ func HandleGetGame(c echo.Context) error {
 	}
 
 	host := config.Env().SERVER_URL
-	port := config.Env().PORT
 	entry := []byte(fmt.Sprintf(
 		`<!DOCTYPE html>
-		<script src="%s:%s/wasm_exec.js"></script>
+		<script src="%s/wasm_exec.js"></script>
 		<script>function id() {return "%s"}</script>
 		<script>
 		// Polyfill
@@ -126,10 +125,10 @@ func HandleGetGame(c echo.Context) error {
 		}
 
 		const go = new Go();
-		WebAssembly.instantiateStreaming(fetch("%s:%s/game.wasm"), go.importObject).then(result => {
+		WebAssembly.instantiateStreaming(fetch("%s/game.wasm"), go.importObject).then(result => {
 			go.run(result.instance);
 		});
-		</script>`, host, port, claims.UserID, host, port))
+		</script>`, host, claims.UserID, host))
 
 	return c.HTMLBlob(200, entry)
 }
