@@ -126,9 +126,12 @@ func HandleGetGame(c echo.Context) error {
 
 		const go = new Go();
 		WebAssembly.instantiateStreaming(fetch("%s/game.wasm"), go.importObject).then(result => {
+			document.getElementById("loading").remove();
 			go.run(result.instance);
 		});
-		</script>`, host, claims.UserID, host))
+		</script>
+		<font id="loading">Loading...</font>
+		`, host, claims.UserID, host))
 
 	return c.HTMLBlob(200, entry)
 }
