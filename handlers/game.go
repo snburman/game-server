@@ -130,7 +130,7 @@ func HandleGetGame(c echo.Context) error {
 			go.run(result.instance);
 		});
 		</script>
-		<font id="loading">Loading...</font>
+		<font id="loading" style="color: white;">Loading...</font>
 		`, host, claims.UserID, host))
 
 	return c.HTMLBlob(200, entry)
