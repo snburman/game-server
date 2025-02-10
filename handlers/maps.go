@@ -11,8 +11,9 @@ import (
 )
 
 func HandleGetMapByID(c echo.Context) error {
-	id := c.Param("id")
-	if id == "" {
+	id := c.QueryParam("id")
+	userID := c.QueryParam("userID")
+	if id == "" || userID == "" {
 		return c.JSON(
 			http.StatusBadRequest,
 			errors.ErrMissingParams.JSON(),
@@ -26,6 +27,15 @@ func HandleGetMapByID(c echo.Context) error {
 			errors.ServerError(err.Error()).JSON(),
 		)
 	}
+
+	_map, err = db.AppendMapPlayerCharacterAssets(db.MongoDB, userID, _map)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+
 	return c.JSON(http.StatusOK, _map)
 }
 
@@ -45,21 +55,14 @@ func HandleGetPrimaryMap(c echo.Context) error {
 			errors.ServerError(err.Error()).JSON(),
 		)
 	}
-	// add character assets
-	charAssets, err := db.GetPlayerCharacterAssetsByUserID(db.MongoDB, userID)
+
+	_map, err = db.AppendMapPlayerCharacterAssets(db.MongoDB, userID, _map)
 	if err != nil {
 		return c.JSON(
 			http.StatusInternalServerError,
 			errors.ServerError(err.Error()).JSON(),
 		)
 	}
-	// set character assets x,y to entrance
-	for i := range charAssets {
-		charAssets[i].X = _map.Entrance.X
-		charAssets[i].Y = _map.Entrance.Y
-	}
-	_map.Data = append(_map.Data, charAssets...)
-
 	return c.JSON(http.StatusOK, _map)
 }
 
