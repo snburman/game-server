@@ -24,6 +24,7 @@ type Portal struct {
 type Map[T any] struct {
 	ID       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	UserID   string             `json:"user_id" bson:"user_id"`
+	UserName string             `json:"username" bson:"username"`
 	Name     string             `json:"name" bson:"name"`
 	Primary  bool               `json:"primary" bson:"primary"`
 	Entrance struct {
@@ -62,6 +63,7 @@ func CreateMap(db DatabaseClient, m Map[string]) (primitive.ObjectID, error) {
 	// convert data to bytes
 	byteMap := Map[[]byte]{
 		UserID:   m.UserID,
+		UserName: m.UserName,
 		Name:     m.Name,
 		Primary:  m.Primary,
 		Entrance: m.Entrance,
@@ -81,6 +83,15 @@ func CreateMap(db DatabaseClient, m Map[string]) (primitive.ObjectID, error) {
 	return insertedID, nil
 }
 
+func GetAllMaps(db DatabaseClient) ([]Map[[]PlayerAsset[PixelData]], error) {
+	var byteMaps []Map[[]byte]
+	err := db.Get(bson.M{}, mapsDBOptions, &byteMaps)
+	if err != nil {
+		return nil, errors.ErrMapNotFound
+	}
+	return bytesToPlayerAssetMaps(byteMaps)
+}
+
 // GetPrimaryMapByUserID retrieves the primary map by userID
 func GetPrimaryMapByUserID(db DatabaseClient, userID string) (Map[[]PlayerAsset[PixelData]], error) {
 	_map := *new(Map[[]PlayerAsset[PixelData]])
@@ -88,7 +99,7 @@ func GetPrimaryMapByUserID(db DatabaseClient, userID string) (Map[[]PlayerAsset[
 	if err != nil {
 		return _map, errors.ErrMapNotFound
 	}
-	return unmarshalMap(res)
+	return unmarshalMapBSON(res)
 }
 
 // GetMapByID retrieves a map by ID
@@ -103,7 +114,7 @@ func GetMapByID(db DatabaseClient, ID string) (Map[[]PlayerAsset[PixelData]], er
 	if err != nil {
 		return empty, err
 	}
-	return unmarshalMap(res)
+	return unmarshalMapBSON(res)
 }
 
 // GetMapByNameUserID retrieves a map by name and userID
@@ -113,7 +124,7 @@ func GetMapByNameUserID(db DatabaseClient, name, userID string) (Map[[]PlayerAss
 	if err != nil {
 		return _map, errors.ErrMapNotFound
 	}
-	return unmarshalMap(res)
+	return unmarshalMapBSON(res)
 }
 
 // GetMapsByUserID retrieves all maps by userID
@@ -123,25 +134,7 @@ func GetMapsByUserID(db DatabaseClient, userID string) ([]Map[[]PlayerAsset[Pixe
 	if err != nil {
 		return nil, errors.ErrMapNotFound
 	}
-
-	var maps []Map[[]PlayerAsset[PixelData]]
-	for _, bm := range byteMaps {
-		_map := new(Map[[]PlayerAsset[PixelData]])
-		err := json.Unmarshal(bm.Data, &_map.Data)
-		if err != nil {
-			log.Println("error decoding map images: ", err)
-			return nil, err
-		}
-		_map.ID = bm.ID
-		_map.UserID = bm.UserID
-		_map.Name = bm.Name
-		_map.Primary = bm.Primary
-		_map.Entrance = bm.Entrance
-		_map.Portals = bm.Portals
-		maps = append(maps, *_map)
-	}
-
-	return maps, nil
+	return bytesToPlayerAssetMaps(byteMaps)
 }
 
 // UpdateMap updates a map and reassigns primary map if necessary
@@ -165,6 +158,7 @@ func UpdateMap(db DatabaseClient, m Map[string]) error {
 	// convert data to bytes
 	byteMap := Map[[]byte]{
 		UserID:   m.UserID,
+		UserName: m.UserName,
 		Name:     m.Name,
 		Primary:  m.Primary,
 		Entrance: m.Entrance,
@@ -193,7 +187,7 @@ func DeleteMap(db DatabaseClient, ID string) error {
 }
 
 // unmarshalMap unmarshals map data from bytes to the correct type
-func unmarshalMap(data any) (Map[[]PlayerAsset[PixelData]], error) {
+func unmarshalMapBSON(data any) (Map[[]PlayerAsset[PixelData]], error) {
 	_map := *new(Map[[]PlayerAsset[PixelData]])
 	var bm Map[[]byte]
 	if err := utils.UnmarshalBSON(data, &bm); err != nil {
@@ -205,10 +199,32 @@ func unmarshalMap(data any) (Map[[]PlayerAsset[PixelData]], error) {
 	}
 	_map.ID = bm.ID
 	_map.UserID = bm.UserID
+	_map.UserName = bm.UserName
 	_map.Name = bm.Name
 	_map.Primary = bm.Primary
 	_map.Entrance = bm.Entrance
 	_map.Portals = bm.Portals
 
 	return _map, nil
+}
+
+func bytesToPlayerAssetMaps(byteMaps []Map[[]byte]) ([]Map[[]PlayerAsset[PixelData]], error) {
+	var maps []Map[[]PlayerAsset[PixelData]]
+	for _, bm := range byteMaps {
+		_map := new(Map[[]PlayerAsset[PixelData]])
+		err := json.Unmarshal(bm.Data, &_map.Data)
+		if err != nil {
+			log.Println("error decoding map images: ", err)
+			return nil, err
+		}
+		_map.ID = bm.ID
+		_map.UserID = bm.UserID
+		_map.UserName = bm.UserName
+		_map.Name = bm.Name
+		_map.Primary = bm.Primary
+		_map.Entrance = bm.Entrance
+		_map.Portals = bm.Portals
+		maps = append(maps, *_map)
+	}
+	return maps, nil
 }

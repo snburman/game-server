@@ -10,6 +10,18 @@ import (
 	"github.com/snburman/game-server/middleware"
 )
 
+// HandleGetAllMaps retrieves all maps
+func HandleGetAllMaps(c echo.Context) error {
+	maps, err := db.GetAllMaps(db.MongoDB)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+	return c.JSON(http.StatusOK, maps)
+}
+
 // @QueryParam id
 //
 // @QueryParam userID
@@ -33,7 +45,7 @@ func HandleGetMapByID(c echo.Context) error {
 		)
 	}
 
-	_map, err = db.AppendMapPlayerCharacterAssets(db.MongoDB, userID, _map)
+	_map, err = db.AppendMapPlayerCharacter(db.MongoDB, userID, _map)
 	if err != nil {
 		return c.JSON(
 			http.StatusInternalServerError,
@@ -64,7 +76,7 @@ func HandleGetPlayerPrimaryMap(c echo.Context) error {
 		)
 	}
 
-	_map, err = db.AppendMapPlayerCharacterAssets(db.MongoDB, userID, _map)
+	_map, err = db.AppendMapPlayerCharacter(db.MongoDB, userID, _map)
 	if err != nil {
 		return c.JSON(
 			http.StatusInternalServerError,
@@ -89,6 +101,9 @@ func HandleGetPlayerMaps(c echo.Context) error {
 	return c.JSON(http.StatusOK, maps)
 }
 
+// @Body Map[string]
+//
+// HandleCreateMap creates a new map
 func HandleCreateMap(c echo.Context) error {
 	claims, ok := c.(middleware.JWTContext)
 	if !ok {
@@ -124,6 +139,9 @@ func HandleCreateMap(c echo.Context) error {
 	})
 }
 
+// @Body Map[string]
+//
+// HandleUpdateMap updates an existing map
 func HandleUpdateMap(c echo.Context) error {
 	claims, ok := c.(middleware.JWTContext)
 	if !ok {
@@ -166,6 +184,9 @@ func HandleUpdateMap(c echo.Context) error {
 	return c.NoContent(http.StatusAccepted)
 }
 
+// @Param id
+//
+// HandleDeleteMap deletes a map by ID
 func HandleDeleteMap(c echo.Context) error {
 	claims, ok := c.(middleware.JWTContext)
 	if !ok {
