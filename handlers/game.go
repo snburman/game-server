@@ -101,14 +101,15 @@ func HandleGetGame(c echo.Context) error {
 		)
 	}
 
+	//TODO: refactor for connection
 	// check for connection
-	_, err = conn.ConnPool.Get(claims.UserID)
-	if err != nil {
-		return c.JSON(
-			http.StatusUnauthorized,
-			errors.ErrConnectionNotFound.JSON(),
-		)
-	}
+	// _, err = conn.ConnPool.Get(claims.UserID)
+	// if err != nil {
+	// 	return c.JSON(
+	// 		http.StatusUnauthorized,
+	// 		errors.ErrConnectionNotFound.JSON(),
+	// 	)
+	// }
 
 	host := config.Env().SERVER_URL
 	entry := []byte(fmt.Sprintf(

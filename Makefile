@@ -4,6 +4,10 @@ COVERAGE = coverage.out
 make:
 	go run main.go
 
+publish:
+	date
+	git push heroku main
+
 assets:
 	go run cmd/generate/main.go
 
