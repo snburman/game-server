@@ -10,6 +10,11 @@ import (
 	"github.com/snburman/game-server/middleware"
 )
 
+// @QueryParam id
+//
+// @QueryParam userID
+//
+// HandleGetMapByID retrieves a map by ID and appends player character by userID
 func HandleGetMapByID(c echo.Context) error {
 	id := c.QueryParam("id")
 	userID := c.QueryParam("userID")
@@ -39,7 +44,10 @@ func HandleGetMapByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, _map)
 }
 
-func HandleGetPrimaryMap(c echo.Context) error {
+// @Param userID
+//
+// HandleGetPrimaryMap retrieves the primary map by userID and appends player character
+func HandleGetPlayerPrimaryMap(c echo.Context) error {
 	userID := c.Param("userID")
 	if userID == "" {
 		return c.JSON(
