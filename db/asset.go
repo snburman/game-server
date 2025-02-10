@@ -116,7 +116,7 @@ func GetPlayerAssetsByUserID(db DatabaseClient, userID string) ([]PlayerAsset[Pi
 	return assets, nil
 }
 
-func GetPlayerCharacterAssetsByUserID(db DatabaseClient, userID string) ([]PlayerAsset[PixelData], error) {
+func GetPlayerCharacterByUserID(db DatabaseClient, userID string) ([]PlayerAsset[PixelData], error) {
 	filter := bson.A{
 		bson.D{{
 			Key: "$match", Value: bson.D{
@@ -167,10 +167,10 @@ func GetPlayerCharacterAssetsByUserID(db DatabaseClient, userID string) ([]Playe
 	return assets, nil
 }
 
-// AppendMapPlayerCharacterAssets gets all character assets for a user and appends them to the map
-func AppendMapPlayerCharacterAssets(db DatabaseClient, userID string, _map Map[[]PlayerAsset[PixelData]]) (Map[[]PlayerAsset[PixelData]], error) {
+// AppendMapPlayerCharacter gets all character assets for a user and appends them to the map
+func AppendMapPlayerCharacter(db DatabaseClient, userID string, _map Map[[]PlayerAsset[PixelData]]) (Map[[]PlayerAsset[PixelData]], error) {
 	// add character assets
-	charAssets, err := GetPlayerCharacterAssetsByUserID(db, userID)
+	charAssets, err := GetPlayerCharacterByUserID(db, userID)
 	if err != nil {
 		return _map, errors.ServerError(err.Error())
 	}

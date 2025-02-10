@@ -55,10 +55,11 @@ func main() {
 	e.DELETE("/assets/player", middleware.MiddlewareJWT(handlers.HandleDeletePlayerAsset))
 
 	// maps
-	e.GET("/maps/:id", middleware.MiddlewareJWT(handlers.HandleGetMapByID))
+	e.GET("/maps", middleware.MiddlewareJWT(handlers.HandleGetAllMaps))
 	e.POST("/maps", middleware.MiddlewareJWT(handlers.HandleCreateMap))
-	e.GET("/maps/player", middleware.MiddlewareJWT(handlers.HandleGetPlayerMaps))
 	e.PATCH("/maps", middleware.MiddlewareJWT(handlers.HandleUpdateMap))
+	e.GET("/maps/player", middleware.MiddlewareJWT(handlers.HandleGetPlayerMaps))
+	e.GET("/maps/:id", middleware.MiddlewareJWT(handlers.HandleGetMapByID))
 	e.DELETE("/maps/:id", middleware.MiddlewareJWT(handlers.HandleDeleteMap))
 
 	// database
