@@ -83,6 +83,7 @@ func CreateMap(db DatabaseClient, m Map[string]) (primitive.ObjectID, error) {
 	return insertedID, nil
 }
 
+// GetAllMaps retrieves all maps from every user
 func GetAllMaps(db DatabaseClient) ([]Map[[]PlayerAsset[PixelData]], error) {
 	var byteMaps []Map[[]byte]
 	err := db.Get(bson.M{}, mapsDBOptions, &byteMaps)
@@ -115,6 +116,25 @@ func GetMapByID(db DatabaseClient, ID string) (Map[[]PlayerAsset[PixelData]], er
 		return empty, err
 	}
 	return unmarshalMapBSON(res)
+}
+
+// GetMapsByIDs retrieves all maps by slice of ID strings
+func GetMapsByIDs(db DatabaseClient, IDs []string) ([]Map[[]PlayerAsset[PixelData]], error) {
+	var byteMaps []Map[[]byte]
+	var objectIDs []primitive.ObjectID
+	for _, id := range IDs {
+		_id, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return nil, err
+		}
+		objectIDs = append(objectIDs, _id)
+	}
+
+	err := db.Get(bson.M{"_id": bson.M{"$in": objectIDs}}, mapsDBOptions, &byteMaps)
+	if err != nil {
+		return nil, errors.ErrMapNotFound
+	}
+	return bytesToPlayerAssetMaps(byteMaps)
 }
 
 // GetMapByNameUserID retrieves a map by name and userID
