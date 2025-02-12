@@ -56,6 +56,28 @@ func HandleGetMapByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, _map)
 }
 
+// @QueryParam []string
+//
+// HandleGetAllMapsByIDs retrieves all maps by IDs
+func HandleGetAllMapsByIDs(c echo.Context) error {
+	ids := c.QueryParams()["ids"]
+	if len(ids) == 0 {
+		return c.JSON(
+			http.StatusBadRequest,
+			errors.ErrMissingParams.JSON(),
+		)
+	}
+
+	maps, err := db.GetMapsByIDs(db.MongoDB, ids)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+	return c.JSON(http.StatusOK, maps)
+}
+
 // @Param userID
 //
 // HandleGetPrimaryMap retrieves the primary map by userID and appends player character
