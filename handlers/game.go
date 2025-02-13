@@ -114,24 +114,27 @@ func HandleGetGame(c echo.Context) error {
 	host := config.Env().SERVER_URL
 	entry := []byte(fmt.Sprintf(
 		`<!DOCTYPE html>
+		<link rel="stylesheet" href="/assets/styles.css">
 		<script src="%s/wasm_exec.js"></script>
 		<script>function id() {return "%s"}</script>
 		<script>
-		// Polyfill
 		if (!WebAssembly.instantiateStreaming) {
 			WebAssembly.instantiateStreaming = async (resp, importObject) => {
 				const source = await (await resp).arrayBuffer();
 				return await WebAssembly.instantiate(source, importObjec);
-			};
-		}
-
-		const go = new Go();
-		WebAssembly.instantiateStreaming(fetch("%s/game.wasm"), go.importObject).then(result => {
-			document.getElementById("loading").remove();
-			go.run(result.instance);
-		});
+				};
+				}
+				
+				const go = new Go();
+				WebAssembly.instantiateStreaming(fetch("%s/game.wasm"), go.importObject).then(result => {
+					document.getElementById("loadingContainer").style.display = "none";
+					go.run(result.instance);
+					});
 		</script>
-		<font id="loading" style="color: white;">Loading...</font>
+		<div id="loadingContainer">
+			// <img src="/assets/loading.png">
+			<font id="loadingText">Loading...</font>
+		</div>
 		`, host, claims.UserID, host))
 
 	return c.HTMLBlob(200, entry)
