@@ -132,7 +132,7 @@ func HandleGetGame(c echo.Context) error {
 					});
 		</script>
 		<div id="loadingContainer">
-			<img id="loadingSpinner" src="/assets/default_player.png">
+			<img id="loadingSpinner" src="/assets/img/default_player.png">
 			<font id="loadingText">Loading...</font>
 			<font id="loadingMessage">This may take a minute</font>
 		</div>
