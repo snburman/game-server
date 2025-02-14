@@ -19,4 +19,4 @@ test:
 
 test_coverage:
 	go test ./... -v -coverprofile=$(COVERAGE)
-	go tool cover -html=$(COVERAGE)
+	go tool cover -html=$(COVERAGE) 
