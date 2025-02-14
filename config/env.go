@@ -10,12 +10,13 @@ import (
 
 // Environment variables
 type Vars struct {
-	SERVER_URL    string
-	PORT          string
-	MONGO_URI     string
-	SECRET        string
-	CLIENT_ID     string
-	CLIENT_SECRET string
+	SERVER_URL      string
+	ALLOWED_ORIGINS string
+	PORT            string
+	MONGO_URI       string
+	SECRET          string
+	CLIENT_ID       string
+	CLIENT_SECRET   string
 }
 
 // Env() returns Vars struct of environment variables
@@ -29,11 +30,12 @@ func Env() Vars {
 	}
 
 	return Vars{
-		SERVER_URL:    os.Getenv("SERVER_URL"),
-		PORT:          os.Getenv("PORT"),
-		MONGO_URI:     os.Getenv("MONGO_URI"),
-		SECRET:        os.Getenv("SECRET"),
-		CLIENT_ID:     os.Getenv("CLIENT_ID"),
-		CLIENT_SECRET: os.Getenv("CLIENT_SECRET"),
+		SERVER_URL:      os.Getenv("SERVER_URL"),
+		ALLOWED_ORIGINS: os.Getenv("ALLOWED_ORIGINS"),
+		PORT:            os.Getenv("PORT"),
+		MONGO_URI:       os.Getenv("MONGO_URI"),
+		SECRET:          os.Getenv("SECRET"),
+		CLIENT_ID:       os.Getenv("CLIENT_ID"),
+		CLIENT_SECRET:   os.Getenv("CLIENT_SECRET"),
 	}
 }
