@@ -116,6 +116,17 @@ func HandleGetGame(c echo.Context) error {
 		`<!DOCTYPE html>
 		<link rel="stylesheet" href="/assets/styles.css">
 		<script src="%s/wasm_exec.js"></script>
+		<script>
+			function setLoading() {
+				elem = document.getElementById("loadingText");
+				if (elem.innerHTML == "Loading...") {
+					elem.innerHTML = "Loading.";
+				} else {
+					elem.innerHTML += ".";
+				}
+			}
+			setInterval(setLoading, 500);
+		</script>
 		<script>function id() {return "%s"}</script>
 		<script>
 		if (!WebAssembly.instantiateStreaming) {
@@ -132,7 +143,6 @@ func HandleGetGame(c echo.Context) error {
 					});
 		</script>
 		<div id="loadingContainer">
-			<img id="loadingSpinner" src="/assets/img/default_player.png">
 			<font id="loadingText">Loading...</font>
 			<font id="loadingMessage">This may take a minute</font>
 		</div>
