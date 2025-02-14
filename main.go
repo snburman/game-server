@@ -27,12 +27,12 @@ func main() {
 	})
 
 	// token refresh
-	e.POST("/token/refresh", middleware.MiddlewareClientCredentials(authService.HandleRefreshToken))
+	e.POST("/token/refresh", middleware.MiddleWareClientHeaders(middleware.MiddlewareClientDTO(authService.HandleRefreshToken)))
 
 	// user endpoints
 	e.GET("/user", middleware.MiddlewareJWT(authService.HandleGetUser))
-	e.POST("/user/create", middleware.MiddlewareClientCredentials(authService.HandleCreateUser))
-	e.POST("/user/login", middleware.MiddlewareClientCredentials(authService.HandleLoginUser))
+	e.POST("/user/create", middleware.MiddleWareClientHeaders(middleware.MiddlewareClientDTO(authService.HandleCreateUser)))
+	e.POST("/user/login", middleware.MiddleWareClientHeaders(middleware.MiddlewareClientDTO(authService.HandleLoginUser)))
 	e.PATCH("/user/update", middleware.MiddlewareJWT(authService.HandleUpdateUser))
 	e.DELETE("/user/delete", middleware.MiddlewareJWT(authService.HandleDeleteUser))
 
