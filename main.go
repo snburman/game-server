@@ -38,8 +38,7 @@ func main() {
 
 	// map endpoints
 	//
-	// game
-	e.GET("/game/client/connect", middleware.MiddlewareWebSocket(handlers.HandleClientConnect))
+	// client
 	e.GET("/game/client", handlers.HandleGetGame)
 	// wasm
 	e.GET("/game/wasm/map", middleware.MiddleWareClientHeaders(handlers.HandleGetMapByID))

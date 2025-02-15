@@ -1,116 +1,150 @@
 package conn
 
 import (
+	"encoding/json"
+	"errors"
 	"log"
+	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/snburman/game-server/db"
-	"github.com/snburman/game-server/errors"
 )
 
-const PING_FREQUENCY = 30 * time.Second
-const PING_TIMEOUT = 3 * PING_FREQUENCY
-
-var ConnPool = NewConnectionPool()
-
-type Connection struct {
-	User     db.User
-	lastPing time.Duration
-	Client   *Socket
-	Wasm     *Socket
+var connPool = conns{
+	pool: make(map[string]*Conn),
 }
 
-// Connection is initialized with a user and added to the connection pool by key user.ID.Hex()
-//
-// Client and Wasm are added subequently during handshake
-func NewConnection(user db.User) error {
-	c := &Connection{
-		User: user,
+type (
+	conns struct {
+		mu   sync.Mutex
+		pool map[string]*Conn
 	}
-	ConnPool.set(user.ID.Hex(), c)
-	return nil
+	Conn struct {
+		websocket *websocket.Conn
+		ID        string
+		LastPing  time.Time
+		Messages  chan []byte
+	}
+)
+
+func (c *conns) Get(id string) (*Conn, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	conn, ok := c.pool[id]
+	return conn, ok
 }
 
-func SetClient(id string, conn *websocket.Conn) error {
-	_conn, err := ConnPool.Get(id)
+func (c *conns) Set(id string, conn *Conn) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.pool[id] = conn
+}
+
+func (c *conns) Delete(id string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.pool, id)
+}
+
+func newConn(w http.ResponseWriter, r *http.Request, ID string) (*Conn, error) {
+	upgrader := websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+	websocket, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err.Error() + ": " + id)
-		return err
+		return nil, errors.New("failed to upgrade connection")
 	}
-	_conn.Client = NewSocket(id, conn)
-	ConnPool.set(id, &_conn)
-	return nil
-}
 
-func SetWasm(id string, conn *websocket.Conn) error {
-	_conn, err := ConnPool.Get(id)
-	if err != nil {
-		log.Println(err.Error() + ": " + id)
-		return err
+	c := &Conn{
+		websocket: websocket,
+		ID:        ID,
+		Messages:  make(chan []byte, 16),
 	}
-	_conn.Wasm = NewSocket(id, conn)
-	ConnPool.set(id, &_conn)
-	return nil
+	connPool.Set(c.ID, c)
+	return c, nil
 }
 
-func (c *Connection) Close() {
-	ConnPool.Remove(c.User.ID.Hex())
-}
-
-type ConnectionPool struct {
-	mu          sync.Mutex
-	connections map[string]*Connection
-}
-
-func NewConnectionPool() *ConnectionPool {
-	c := &ConnectionPool{
-		connections: make(map[string]*Connection),
-	}
-	go c.ping()
-	return c
-}
-
-func (cp *ConnectionPool) set(key string, conn *Connection) {
-	cp.mu.Lock()
-	defer cp.mu.Unlock()
-	cp.connections[key] = conn
-}
-
-func (cp *ConnectionPool) Get(key string) (Connection, error) {
-	cp.mu.Lock()
-	defer cp.mu.Unlock()
-	c := cp.connections[key]
+func (c *Conn) close() error {
 	if c == nil {
-		return Connection{}, errors.ErrConnectionNotFound
+		return errors.New("cannot close nil connection")
 	}
-	return *cp.connections[key], nil
+	connPool.Delete(c.ID)
+	c.websocket.Close()
+	return nil
 }
 
-func (cp *ConnectionPool) Remove(key string) {
-	cp.mu.Lock()
-	defer cp.mu.Unlock()
-	delete(cp.connections, key)
+func (c *Conn) listen() {
+	go func(c *Conn) {
+		defer c.close()
+		var dispatch Dispatch[any]
+		for {
+			_, message, err := c.websocket.ReadMessage()
+			if err != nil {
+				if websocket.IsUnexpectedCloseError(
+					err,
+					websocket.CloseGoingAway,
+					websocket.CloseAbnormalClosure,
+					websocket.CloseNormalClosure,
+				) {
+					log.Printf("error: %v", err)
+				}
+				close(c.Messages)
+				break
+			}
+			// Parse dispatch from websocket message
+			err = json.Unmarshal(message, &dispatch)
+			if err != nil {
+				log.Printf("error: %v", err)
+				continue
+			}
+
+			// Set conn on dispatch
+			dispatch.conn = c
+			// Dispatch to message handler
+			// handler.in <- dispatch
+		}
+	}(c)
+
+	// outgoing messages
+	for {
+		msg, ok := <-c.Messages
+		if !ok {
+			c.close()
+			break
+		}
+		if c.websocket == nil {
+			break
+		}
+
+		if err := c.websocket.WriteMessage(1, msg); err != nil {
+			log.Println("error writing message", "error", err)
+			c.close()
+		}
+	}
 }
 
-func (cp *ConnectionPool) ping() {
-	// for {
-	// 	cp.mu.Lock()
-	// 	for key, conn := range cp.connections {
-	// 		conn.lastPing += PING_FREQUENCY
-	// 		if conn.lastPing > PING_TIMEOUT {
-	// 			cp.Remove(key)
-	// 			continue
-	// 		}
-	// 		if cp.connections[key].Client == nil || cp.connections[key].Wasm == nil {
-	// 			return
-	// 		}
-	// 		cp.connections[key].Client.Ping()
-	// 		cp.connections[key].Wasm.Ping()
-	// 		conn.lastPing = 0
-	// 	}
-	// 	cp.mu.Unlock()
-	// 	time.Sleep(PING_FREQUENCY)
-	// }
+func (c *Conn) Publish(msg []byte) {
+	// if msg is not json encodable, return
+	_, err := json.Marshal(msg)
+	if err != nil {
+		log.Println("message not json encodable", "error", err)
+		return
+	}
+	if c == nil {
+		log.Println("connection severed, message not sent")
+		return
+	}
+	conn, _ := connPool.Get(c.ID)
+	if conn != c {
+		return
+	}
+	c.Messages <- msg
+}
+
+func (c *Conn) Write(p []byte) (n int, err error) {
+	c.Messages <- p
+	return len(p), nil
 }
