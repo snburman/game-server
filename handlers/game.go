@@ -101,36 +101,52 @@ func HandleGetGame(c echo.Context) error {
 		)
 	}
 
+	//TODO: refactor for connection
 	// check for connection
-	_, err = conn.ConnPool.Get(claims.UserID)
-	if err != nil {
-		return c.JSON(
-			http.StatusUnauthorized,
-			errors.ErrConnectionNotFound.JSON(),
-		)
-	}
+	// _, err = conn.ConnPool.Get(claims.UserID)
+	// if err != nil {
+	// 	return c.JSON(
+	// 		http.StatusUnauthorized,
+	// 		errors.ErrConnectionNotFound.JSON(),
+	// 	)
+	// }
 
-	host := config.Env().HOST
-	port := config.Env().PORT
-
+	host := config.Env().SERVER_URL
 	entry := []byte(fmt.Sprintf(
 		`<!DOCTYPE html>
-		<script src="%s:%s/wasm_exec.js"></script>
+		<link rel="stylesheet" href="/assets/styles.css">
+		<script src="%s/wasm_exec.js"></script>
+		<script>
+			function setLoading() {
+				elem = document.getElementById("loadingText");
+				if (elem.innerHTML == "Loading...") {
+					elem.innerHTML = "Loading.";
+				} else {
+					elem.innerHTML += ".";
+				}
+			}
+			setInterval(setLoading, 500);
+		</script>
 		<script>function id() {return "%s"}</script>
 		<script>
-		// Polyfill
 		if (!WebAssembly.instantiateStreaming) {
 			WebAssembly.instantiateStreaming = async (resp, importObject) => {
 				const source = await (await resp).arrayBuffer();
 				return await WebAssembly.instantiate(source, importObjec);
-			};
-		}
-
-		const go = new Go();
-		WebAssembly.instantiateStreaming(fetch("%s:%s/game.wasm"), go.importObject).then(result => {
-			go.run(result.instance);
-		});
-		</script>`, host, port, claims.UserID, host, port))
+				};
+				}
+				
+				const go = new Go();
+				WebAssembly.instantiateStreaming(fetch("%s/game.wasm"), go.importObject).then(result => {
+					document.getElementById("loadingContainer").style.display = "none";
+					go.run(result.instance);
+					});
+		</script>
+		<div id="loadingContainer">
+			<font id="loadingText">Loading...</font>
+			<font id="loadingMessage">This may take a minute</font>
+		</div>
+		`, host, claims.UserID, host))
 
 	return c.HTMLBlob(200, entry)
 }

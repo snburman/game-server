@@ -27,22 +27,24 @@ func main() {
 	})
 
 	// token refresh
-	e.POST("/token/refresh", middleware.MiddlewareClientCredentials(authService.HandleRefreshToken))
+	e.POST("/token/refresh", middleware.MiddleWareClientHeaders(middleware.MiddlewareClientDTO(authService.HandleRefreshToken)))
 
 	// user endpoints
 	e.GET("/user", middleware.MiddlewareJWT(authService.HandleGetUser))
-	e.POST("/user/create", middleware.MiddlewareClientCredentials(authService.HandleCreateUser))
-	e.POST("/user/login", middleware.MiddlewareClientCredentials(authService.HandleLoginUser))
+	e.POST("/user/create", middleware.MiddleWareClientHeaders(middleware.MiddlewareClientDTO(authService.HandleCreateUser)))
+	e.POST("/user/login", middleware.MiddleWareClientHeaders(middleware.MiddlewareClientDTO(authService.HandleLoginUser)))
 	e.PATCH("/user/update", middleware.MiddlewareJWT(authService.HandleUpdateUser))
 	e.DELETE("/user/delete", middleware.MiddlewareJWT(authService.HandleDeleteUser))
 
-	// game
+	// map endpoints
 	//
+	// game
 	e.GET("/game/client/connect", middleware.MiddlewareWebSocket(handlers.HandleClientConnect))
 	e.GET("/game/client", handlers.HandleGetGame)
-	// initiated by game wasm to retrieve map by ID
-	e.GET("/game/wasm/map/:id", middleware.MiddleWareClientHeaders(handlers.HandleGetMapByID))
-	e.GET("/game/wasm/map/primary/:userID", middleware.MiddleWareClientHeaders(handlers.HandleGetPrimaryMap))
+	// wasm
+	e.GET("/game/wasm/map", middleware.MiddleWareClientHeaders(handlers.HandleGetMapByID))
+	e.GET("/game/wasm/map/ids", middleware.MiddleWareClientHeaders(handlers.HandleGetAllMapsByIDs))
+	e.GET("/game/wasm/map/primary/:userID", middleware.MiddleWareClientHeaders(handlers.HandleGetPlayerPrimaryMap))
 
 	// assets
 	//
@@ -55,10 +57,11 @@ func main() {
 	e.DELETE("/assets/player", middleware.MiddlewareJWT(handlers.HandleDeletePlayerAsset))
 
 	// maps
-	e.GET("/maps/:id", middleware.MiddlewareJWT(handlers.HandleGetMapByID))
+	e.GET("/maps", middleware.MiddlewareJWT(handlers.HandleGetAllMaps))
 	e.POST("/maps", middleware.MiddlewareJWT(handlers.HandleCreateMap))
-	e.GET("/maps/player", middleware.MiddlewareJWT(handlers.HandleGetPlayerMaps))
 	e.PATCH("/maps", middleware.MiddlewareJWT(handlers.HandleUpdateMap))
+	e.GET("/maps/player", middleware.MiddlewareJWT(handlers.HandleGetPlayerMaps))
+	e.GET("/maps/:id", middleware.MiddlewareJWT(handlers.HandleGetMapByID))
 	e.DELETE("/maps/:id", middleware.MiddlewareJWT(handlers.HandleDeleteMap))
 
 	// database

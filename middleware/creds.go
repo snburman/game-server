@@ -10,10 +10,8 @@ import (
 	"github.com/snburman/game-server/errors"
 )
 
-type ClientCredentialsDTO struct {
-	ClientID     string      `json:"client_id"`
-	ClientSecret string      `json:"client_secret"`
-	Data         interface{} `json:"data"`
+type ClientDTO struct {
+	Data interface{} `json:"data"`
 }
 
 type ClientDataContext struct {
@@ -21,19 +19,12 @@ type ClientDataContext struct {
 	Data interface{}
 }
 
-func MiddlewareClientCredentials(next echo.HandlerFunc) echo.HandlerFunc {
+func MiddlewareClientDTO(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// bind credentials
-		var creds ClientCredentialsDTO
-		err := c.Bind(&creds)
+		var dto ClientDTO
+		err := c.Bind(&dto)
 		if err != nil {
-			return c.JSON(
-				http.StatusUnauthorized,
-				errors.ServerError(errors.ErrInvalidCredentials).JSON(),
-			)
-		}
-		// compare credentials
-		if creds.ClientID != config.Env().CLIENT_ID || creds.ClientSecret != config.Env().CLIENT_SECRET {
 			return c.JSON(
 				http.StatusUnauthorized,
 				errors.ServerError(errors.ErrInvalidCredentials).JSON(),
@@ -42,7 +33,7 @@ func MiddlewareClientCredentials(next echo.HandlerFunc) echo.HandlerFunc {
 		// construct context
 		ctx := ClientDataContext{
 			Context: c,
-			Data:    creds.Data,
+			Data:    dto.Data,
 		}
 
 		return next(ctx)

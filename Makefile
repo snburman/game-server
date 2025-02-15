@@ -4,6 +4,10 @@ COVERAGE = coverage.out
 make:
 	go run main.go
 
+publish:
+	date
+	git push heroku main
+
 assets:
 	go run cmd/generate/main.go
 
@@ -15,4 +19,4 @@ test:
 
 test_coverage:
 	go test ./... -v -coverprofile=$(COVERAGE)
-	go tool cover -html=$(COVERAGE)
+	go tool cover -html=$(COVERAGE) 

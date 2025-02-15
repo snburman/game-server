@@ -10,9 +10,27 @@ import (
 	"github.com/snburman/game-server/middleware"
 )
 
+// HandleGetAllMaps retrieves all maps
+func HandleGetAllMaps(c echo.Context) error {
+	maps, err := db.GetAllMaps(db.MongoDB)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+	return c.JSON(http.StatusOK, maps)
+}
+
+// @QueryParam id
+//
+// @QueryParam userID
+//
+// HandleGetMapByID retrieves a map by ID and appends player character by userID
 func HandleGetMapByID(c echo.Context) error {
-	id := c.Param("id")
-	if id == "" {
+	id := c.QueryParam("id")
+	userID := c.QueryParam("userID")
+	if id == "" || userID == "" {
 		return c.JSON(
 			http.StatusBadRequest,
 			errors.ErrMissingParams.JSON(),
@@ -26,10 +44,44 @@ func HandleGetMapByID(c echo.Context) error {
 			errors.ServerError(err.Error()).JSON(),
 		)
 	}
+
+	_map, err = db.AppendMapPlayerCharacter(db.MongoDB, userID, _map)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+
 	return c.JSON(http.StatusOK, _map)
 }
 
-func HandleGetPrimaryMap(c echo.Context) error {
+// @QueryParam []string
+//
+// HandleGetAllMapsByIDs retrieves all maps by IDs
+func HandleGetAllMapsByIDs(c echo.Context) error {
+	ids := c.QueryParams()["ids"]
+	if len(ids) == 0 {
+		return c.JSON(
+			http.StatusBadRequest,
+			errors.ErrMissingParams.JSON(),
+		)
+	}
+
+	maps, err := db.GetMapsByIDs(db.MongoDB, ids)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			errors.ServerError(err.Error()).JSON(),
+		)
+	}
+	return c.JSON(http.StatusOK, maps)
+}
+
+// @Param userID
+//
+// HandleGetPrimaryMap retrieves the primary map by userID and appends player character
+func HandleGetPlayerPrimaryMap(c echo.Context) error {
 	userID := c.Param("userID")
 	if userID == "" {
 		return c.JSON(
@@ -45,21 +97,14 @@ func HandleGetPrimaryMap(c echo.Context) error {
 			errors.ServerError(err.Error()).JSON(),
 		)
 	}
-	// add character assets
-	charAssets, err := db.GetPlayerCharacterAssetsByUserID(db.MongoDB, userID)
+
+	_map, err = db.AppendMapPlayerCharacter(db.MongoDB, userID, _map)
 	if err != nil {
 		return c.JSON(
 			http.StatusInternalServerError,
 			errors.ServerError(err.Error()).JSON(),
 		)
 	}
-	// set character assets x,y to entrance
-	for i := range charAssets {
-		charAssets[i].X = _map.Entrance.X
-		charAssets[i].Y = _map.Entrance.Y
-	}
-	_map.Data = append(_map.Data, charAssets...)
-
 	return c.JSON(http.StatusOK, _map)
 }
 
@@ -78,6 +123,9 @@ func HandleGetPlayerMaps(c echo.Context) error {
 	return c.JSON(http.StatusOK, maps)
 }
 
+// @Body Map[string]
+//
+// HandleCreateMap creates a new map
 func HandleCreateMap(c echo.Context) error {
 	claims, ok := c.(middleware.JWTContext)
 	if !ok {
@@ -113,6 +161,9 @@ func HandleCreateMap(c echo.Context) error {
 	})
 }
 
+// @Body Map[string]
+//
+// HandleUpdateMap updates an existing map
 func HandleUpdateMap(c echo.Context) error {
 	claims, ok := c.(middleware.JWTContext)
 	if !ok {
@@ -155,6 +206,9 @@ func HandleUpdateMap(c echo.Context) error {
 	return c.NoContent(http.StatusAccepted)
 }
 
+// @Param id
+//
+// HandleDeleteMap deletes a map by ID
 func HandleDeleteMap(c echo.Context) error {
 	claims, ok := c.(middleware.JWTContext)
 	if !ok {
