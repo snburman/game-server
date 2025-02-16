@@ -68,6 +68,7 @@ func MiddleWareClientHeaders(next echo.HandlerFunc) echo.HandlerFunc {
 		clientSecret := c.Request().Header.Get("CLIENT_SECRET")
 
 		if clientID != config.Env().CLIENT_ID || clientSecret != config.Env().CLIENT_SECRET {
+			log.Println("invalid_client_credentials")
 			return c.NoContent(http.StatusUnauthorized)
 		}
 		return next(c)

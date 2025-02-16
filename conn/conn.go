@@ -23,35 +23,42 @@ type (
 		pool map[string]*Conn
 	}
 	Conn struct {
-		ID         string
+		UserID     string
 		websocket  *websocket.Conn
 		LastPing   time.Time
+		MapID      string
 		Messages   chan []byte
 		pingDone   chan bool
 		listenDone chan bool
 	}
 )
 
-func (c *conns) Get(id string) (*Conn, bool) {
+func (c *conns) GetAll() map[string]*Conn {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	conn, ok := c.pool[id]
+	return c.pool
+}
+
+func (c *conns) Get(userID string) (*Conn, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	conn, ok := c.pool[userID]
 	return conn, ok
 }
 
-func (c *conns) Set(id string, conn *Conn) {
+func (c *conns) Set(userID string, conn *Conn) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.pool[id] = conn
+	c.pool[userID] = conn
 }
 
-func (c *conns) Delete(id string) {
+func (c *conns) Delete(userID string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	delete(c.pool, id)
+	delete(c.pool, userID)
 }
 
-func NewConn(w http.ResponseWriter, r *http.Request, ID string) (*Conn, error) {
+func NewConn(w http.ResponseWriter, r *http.Request, UserID string) (*Conn, error) {
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -64,13 +71,13 @@ func NewConn(w http.ResponseWriter, r *http.Request, ID string) (*Conn, error) {
 
 	c := &Conn{
 		websocket:  websocket,
-		ID:         ID,
+		UserID:     UserID,
 		Messages:   make(chan []byte, 256),
 		LastPing:   time.Now(),
 		pingDone:   make(chan bool),
 		listenDone: make(chan bool),
 	}
-	connPool.Set(c.ID, c)
+	connPool.Set(c.UserID, c)
 	return c, nil
 }
 
@@ -83,14 +90,6 @@ func (c *Conn) Listen() {
 		for {
 			select {
 			case <-ticker.C:
-				if time.Since(c.LastPing) > PING_INTERVAL*3 {
-					if c.websocket != nil {
-						log.Println("ping timeout", "time since last ping", time.Since(c.LastPing))
-						log.Println("wait time for ping", PING_INTERVAL*3)
-						c.Close()
-						break Ping
-					}
-				}
 				if err := c.websocket.WriteMessage(websocket.PingMessage, nil); err != nil {
 					log.Println("error writing ping", "error", err)
 					c.Close()
@@ -171,7 +170,7 @@ func (c *Conn) Publish(msg []byte) {
 		log.Println("connection severed, message not sent")
 		return
 	}
-	conn, _ := connPool.Get(c.ID)
+	conn, _ := connPool.Get(c.UserID)
 	if conn != c {
 		return
 	}
@@ -184,10 +183,11 @@ func (c *Conn) Close() error {
 		log.Println(msg)
 		return errors.New(msg)
 	}
-	connPool.Delete(c.ID)
+	connPool.Delete(c.UserID)
+	playerPool.Delete(c.UserID)
 	c.websocket.Close()
 	c.pingDone <- true
 	c.listenDone <- true
-	log.Println("connection closed: ", c.ID)
+	log.Println("connection closed: ", c.UserID)
 	return nil
 }

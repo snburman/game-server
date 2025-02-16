@@ -13,7 +13,7 @@ func HandleGameWebsocket(c echo.Context) error {
 	if err != nil {
 		return c.JSON(500, err)
 	}
-	log.Println("new connection created: ", conn.ID)
+	log.Println("new connection created: ", conn.UserID)
 	conn.Listen()
 
 	return nil
