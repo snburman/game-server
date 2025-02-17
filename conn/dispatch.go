@@ -93,7 +93,6 @@ func RouteDispatch(d Dispatch[[]byte]) {
 	if d.conn == nil {
 		panic("nil connection, dispatch not sent")
 	}
-	log.Println("incoming dispatch: ", d.Function)
 
 	if !d.conn.authenticated {
 		log.Println("unauthenticated connection")
@@ -105,8 +104,6 @@ func RouteDispatch(d Dispatch[[]byte]) {
 	case UpdatePlayer:
 		dispatch := ParseDispatch[PlayerUpdate](d)
 		player := Player(dispatch.Data)
-
-		log.Println("updating player: ", player.UserID, "x:", player.Pos.X, "y:", player.Pos.Y)
 
 		// if switching maps
 		if d.conn.MapID != "" && d.conn.MapID != player.MapID {
