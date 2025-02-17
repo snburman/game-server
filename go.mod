@@ -5,8 +5,8 @@ go 1.23
 toolchain go1.23.4
 
 require (
-	github.com/alexedwards/scs/v2 v2.8.0
 	github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.4.0
 	github.com/gorilla/websocket v1.5.3
 	go.mongodb.org/mongo-driver v1.16.0
@@ -19,7 +19,6 @@ require (
 
 require (
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/labstack/echo/v4 v4.12.0
