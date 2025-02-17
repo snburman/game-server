@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	Authenicate         FunctionName = "authenticate"
 	LoadOnlinePlayers   FunctionName = "load_online_players"
 	LoadNewOnlinePlayer FunctionName = "load_new_online_player"
 	RemoveOnlinePlayer  FunctionName = "remove_online_player"
@@ -92,12 +93,20 @@ func RouteDispatch(d Dispatch[[]byte]) {
 	if d.conn == nil {
 		panic("nil connection, dispatch not sent")
 	}
-	log.Println("incoming dispatch: ", d)
+	log.Println("incoming dispatch: ", d.Function)
+
+	if !d.conn.authenticated {
+		log.Println("unauthenticated connection")
+		d.conn.Close()
+		return
+	}
 
 	switch d.Function {
 	case UpdatePlayer:
 		dispatch := ParseDispatch[PlayerUpdate](d)
 		player := Player(dispatch.Data)
+
+		log.Println("updating player: ", player.UserID, "x:", player.Pos.X, "y:", player.Pos.Y)
 
 		// if switching maps
 		if d.conn.MapID != "" && d.conn.MapID != player.MapID {
@@ -121,13 +130,17 @@ func RouteDispatch(d Dispatch[[]byte]) {
 			playerPool.Set(player)
 			// get all players in map and update
 			for _, p := range playerPool.GetAllByMapID(player.MapID) {
-				// get player conn
+				// player sending the update should not receive the update
+				if p.UserID == player.UserID {
+					continue
+				}
+				// get p conn
 				conn, ok := connPool.Get(p.UserID)
 				if !ok {
 					continue
 				}
 				// create new dispatch
-				newDispatch := NewDispatch(uuid.NewString(), conn, UpdatePlayer, PlayerUpdate(p))
+				newDispatch := NewDispatch(uuid.NewString(), conn, UpdatePlayer, PlayerUpdate(player))
 				// update conn with new player data
 				newDispatch.Marshal().Publish()
 			}
@@ -162,7 +175,7 @@ func RouteDispatch(d Dispatch[[]byte]) {
 		player := Player(dispatch.Data)
 
 		// get new player characters
-		newCharacters, err := db.GetPlayerCharactersByUserIDs(db.MongoDB, []string{player.UserID})
+		newPlayerCharacters, err := db.GetPlayerCharactersByUserIDs(db.MongoDB, []string{player.UserID})
 		if err != nil {
 			log.Println("error getting player characters: ", err)
 			return
@@ -178,29 +191,41 @@ func RouteDispatch(d Dispatch[[]byte]) {
 				continue
 			}
 			// create new dispatch
-			newDispatch := NewDispatch(uuid.NewString(), conn, LoadNewOnlinePlayer, newCharacters)
+			newDispatch := NewDispatch(uuid.NewString(), conn, LoadNewOnlinePlayer, newPlayerCharacters)
 			// update conn with new player data
 			newDispatch.Marshal().Publish()
 		}
+
 		// add new player to pool
 		playerPool.Set(player)
 		// update conn with new map ID
 		d.conn.MapID = player.MapID
 
-		// if no players, return
-		if len(ids) == 0 {
-			return
+		// get all player characters in new map
+		allCharacters := []db.PlayerAsset[db.PixelData]{}
+		if len(ids) > 0 {
+			allCharacters, err = db.GetPlayerCharactersByUserIDs(db.MongoDB, ids)
+			if err != nil {
+				log.Println("error getting player characters: ", err)
+				return
+			}
 		}
 
-		// get all player characters in new map
-		allCharacters, err := db.GetPlayerCharactersByUserIDs(db.MongoDB, ids)
-		if err != nil {
-			log.Println("error getting player characters: ", err)
-			return
-		}
-		// if no characters, return
-		if len(allCharacters) == 0 {
-			return
+		// update player positions
+		for key, p := range allCharacters {
+			// get individual conns
+			conn, ok := connPool.Get(p.UserID)
+			if !ok {
+				continue
+			}
+			// get player from player pool
+			player, ok := playerPool.Get(conn.MapID, p.UserID)
+			if !ok {
+				continue
+			}
+			// update player position
+			allCharacters[key].X = player.Pos.X
+			allCharacters[key].Y = player.Pos.Y
 		}
 		// create new dispatch
 		characterDispatch := NewDispatch(uuid.NewString(), d.conn, LoadOnlinePlayers, allCharacters)

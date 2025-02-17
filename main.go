@@ -41,7 +41,7 @@ func main() {
 	// client
 	e.GET("/game/client", handlers.HandleGetGame)
 	// wasm
-	e.GET("/game/wasm/ws/:userID", middleware.MiddleWareClientHeaders(handlers.HandleGameWebsocket))
+	e.GET("/game/wasm/ws/:userID", handlers.HandleGameWebsocket)
 	e.GET("/game/wasm/map", middleware.MiddleWareClientHeaders(handlers.HandleGetMapByID))
 	e.GET("/game/wasm/map/ids", middleware.MiddleWareClientHeaders(handlers.HandleGetAllMapsByIDs))
 	e.GET("/game/wasm/map/primary/:userID", middleware.MiddleWareClientHeaders(handlers.HandleGetPlayerPrimaryMap))

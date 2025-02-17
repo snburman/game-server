@@ -8,10 +8,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/snburman/game-server/config"
 )
 
-const PING_INTERVAL = 5 * time.Second
+const PING_INTERVAL = 10 * time.Second
 
 var connPool = conns{
 	pool: make(map[string]*Conn),
@@ -23,13 +25,15 @@ type (
 		pool map[string]*Conn
 	}
 	Conn struct {
-		UserID     string
-		websocket  *websocket.Conn
-		LastPing   time.Time
-		MapID      string
-		Messages   chan []byte
-		pingDone   chan bool
-		listenDone chan bool
+		mu            sync.Mutex
+		UserID        string
+		websocket     *websocket.Conn
+		authenticated bool
+		LastPing      time.Time
+		MapID         string
+		Messages      chan []byte
+		pingDone      chan bool
+		listenDone    chan bool
 	}
 )
 
@@ -90,12 +94,15 @@ func (c *Conn) Listen() {
 		for {
 			select {
 			case <-ticker.C:
+				c.mu.Lock()
 				if err := c.websocket.WriteMessage(websocket.PingMessage, nil); err != nil {
 					log.Println("error writing ping", "error", err)
+					c.mu.Unlock()
 					c.Close()
 					break Ping
 				}
 				c.LastPing = time.Now()
+				c.mu.Unlock()
 			case <-c.pingDone:
 				log.Println("ping done")
 				break Ping
@@ -126,6 +133,28 @@ func (c *Conn) Listen() {
 			if err != nil {
 				log.Printf("error: %v", err)
 				continue
+			}
+
+			// Authenticate connection
+			if dispatch.Function == Authenicate {
+				dispatch := ParseDispatch[map[string][]string](dispatch)
+				headers := dispatch.Data
+				if len(headers["CLIENT_SECRET"]) == 0 || len(headers["CLIENT_ID"]) == 0 {
+					log.Println("missing headers")
+					c.Close()
+				}
+				if headers["CLIENT_SECRET"][0] != config.Env().CLIENT_SECRET ||
+					headers["CLIENT_ID"][0] != config.Env().CLIENT_ID {
+					log.Println("invalid headers")
+					c.Close()
+				} else {
+					c.authenticated = true
+				}
+			}
+			if !c.authenticated {
+				log.Println("unauthenticated connection")
+				c.Close()
+				break
 			}
 
 			// Set conn on dispatch
@@ -160,6 +189,8 @@ func (c *Conn) Listen() {
 }
 
 func (c *Conn) Publish(msg []byte) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	// if msg is not json encodable, return
 	_, err := json.Marshal(msg)
 	if err != nil {
@@ -178,13 +209,21 @@ func (c *Conn) Publish(msg []byte) {
 }
 
 func (c *Conn) Close() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if c.websocket == nil {
 		msg := "cannot close nil connection"
 		log.Println(msg)
 		return errors.New(msg)
 	}
+	// remove connection from pool
 	connPool.Delete(c.UserID)
+	// remove player from player pool
 	playerPool.Delete(c.UserID)
+	// notify online players of player removal
+	dispatch := NewDispatch(uuid.NewString(), c, RemoveOnlinePlayer, c.UserID)
+	RouteDispatch(dispatch.Marshal())
+
 	c.websocket.Close()
 	c.pingDone <- true
 	c.listenDone <- true
