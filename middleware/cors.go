@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"log"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -12,7 +11,6 @@ func MiddlewareCORS(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		allowedOrigins := strings.Split(config.Env().ALLOWED_ORIGINS, ",")
 		origin := c.Request().Header.Get("Origin")
-		log.Println("origin", origin)
 		for _, allowedOrigin := range allowedOrigins {
 			if origin == allowedOrigin {
 				c.Response().Header().Set("Access-Control-Allow-Origin", origin)

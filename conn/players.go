@@ -44,6 +44,19 @@ func (p *PlayerPool) Get(mapID string, userID string) (Player, bool) {
 	return player, ok
 }
 
+// GetPlayersInMapByUserID returns all players in a map by one present userID
+func (p *PlayerPool) GetPlayersInMapByUserID(userID string) (map[string]Player, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	// get player by userID
+	for _, players := range p.pool {
+		if _, ok := players[userID]; ok {
+			return players, true
+		}
+	}
+	return nil, false
+}
+
 func (p *PlayerPool) Set(player Player) {
 	p.mu.Lock()
 	defer p.mu.Unlock()

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -13,9 +14,19 @@ import (
 	"github.com/snburman/game-server/config"
 )
 
-const PING_INTERVAL = 10 * time.Second
+const (
+	WasmConn      ConnType      = "wasm"
+	ChatConn      ConnType      = "chat"
+	PING_INTERVAL time.Duration = 10 * time.Second
+)
 
-var connPool = conns{
+// Connection pool for game wasm
+var wasmConnPool = conns{
+	pool: make(map[string]*Conn),
+}
+
+// Connection pool for client chat
+var chatConnPool = conns{
 	pool: make(map[string]*Conn),
 }
 
@@ -24,8 +35,10 @@ type (
 		mu   sync.Mutex
 		pool map[string]*Conn
 	}
-	Conn struct {
+	ConnType string
+	Conn     struct {
 		mu            sync.Mutex
+		connType      ConnType
 		UserID        string
 		websocket     *websocket.Conn
 		authenticated bool
@@ -81,7 +94,20 @@ func NewConn(w http.ResponseWriter, r *http.Request, UserID string) (*Conn, erro
 		pingDone:   make(chan bool),
 		listenDone: make(chan bool),
 	}
-	connPool.Set(c.UserID, c)
+
+	parsedID := strings.Split(c.UserID, "::")
+
+	if len(parsedID) == 1 {
+		// set conn type
+		c.connType = WasmConn
+		// add connection to pool
+		wasmConnPool.Set(c.UserID, c)
+	} else if len(parsedID) > 1 && parsedID[0] == "chat" {
+		// set conn type
+		c.connType = ChatConn
+		// add connection to pool
+		chatConnPool.Set(parsedID[1], c)
+	}
 	return c, nil
 }
 
@@ -136,8 +162,8 @@ func (c *Conn) Listen() {
 			}
 
 			// Authenticate connection
-			if dispatch.Function == Authenicate {
-				dispatch := ParseDispatch[map[string][]string](dispatch)
+			if dispatch.Function == Authenticate {
+				dispatch := ParseDispatch[Authentication](dispatch)
 				headers := dispatch.Data
 				if len(headers["CLIENT_SECRET"]) == 0 || len(headers["CLIENT_ID"]) == 0 {
 					log.Println("missing headers")
@@ -169,21 +195,16 @@ func (c *Conn) Listen() {
 		select {
 		case msg, ok := <-c.Messages:
 			if !ok {
-				log.Println("channel closed")
+				log.Println("channel closed: ", "userID ", c.UserID)
 				c.Close()
 				break
 			}
-			if c.websocket == nil {
-				break
-			}
-
 			if err := c.websocket.WriteMessage(1, msg); err != nil {
 				log.Println("error writing message", "error", err)
 				c.Close()
 			}
 		case <-c.listenDone:
 			log.Println("listen done")
-			break
 		}
 	}
 }
@@ -201,10 +222,6 @@ func (c *Conn) Publish(msg []byte) {
 		log.Println("connection severed, message not sent")
 		return
 	}
-	conn, _ := connPool.Get(c.UserID)
-	if conn != c {
-		return
-	}
 	c.Messages <- msg
 }
 
@@ -216,13 +233,22 @@ func (c *Conn) Close() error {
 		log.Println(msg)
 		return errors.New(msg)
 	}
-	// remove connection from pool
-	connPool.Delete(c.UserID)
-	// remove player from player pool
-	playerPool.Delete(c.UserID)
-	// notify online players of player removal
-	dispatch := NewDispatch(uuid.NewString(), c, RemoveOnlinePlayer, c.UserID)
-	RouteDispatch(dispatch.Marshal())
+
+	switch c.connType {
+	case WasmConn:
+		// remove connection from pool
+		wasmConnPool.Delete(c.UserID)
+		// remove player from player pool
+		playerPool.Delete(c.UserID)
+		// notify online players of player removal
+		dispatch := NewDispatch(uuid.NewString(), c, RemoveOnlinePlayer, c.UserID)
+		RouteDispatch(dispatch.Marshal())
+	case ChatConn:
+		// remove connection from pool
+		chatConnPool.Delete(c.UserID)
+	default:
+		log.Fatal("invalid connection type")
+	}
 
 	c.websocket.Close()
 	c.pingDone <- true

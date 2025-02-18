@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	Authenicate         FunctionName = "authenticate"
+	Authenticate        FunctionName = "authenticate"
 	LoadOnlinePlayers   FunctionName = "load_online_players"
 	LoadNewOnlinePlayer FunctionName = "load_new_online_player"
 	RemoveOnlinePlayer  FunctionName = "remove_online_player"
@@ -39,6 +39,12 @@ type (
 		Data     T            `json:"data"`
 	}
 	PlayerUpdate Player
+	ChatMessage  struct {
+		UserID   string `json:"user_id"`
+		UserName string `json:"username"`
+		Message  string `json:"message"`
+	}
+	Authentication map[string][]string
 )
 
 func NewDispatch[T any](id string, conn *Conn, function FunctionName, data T) Dispatch[T] {
@@ -81,7 +87,7 @@ func ParseDispatch[T any](d Dispatch[[]byte]) Dispatch[T] {
 	var dis Dispatch[T]
 	err := json.Unmarshal(d.Data, &dis.Data)
 	if err != nil {
-		panic(err)
+		log.Println("error unmarshalling dispatch data", "error", err)
 	}
 	dis.ID = d.ID
 	dis.conn = d.conn
@@ -132,7 +138,7 @@ func RouteDispatch(d Dispatch[[]byte]) {
 					continue
 				}
 				// get p conn
-				conn, ok := connPool.Get(p.UserID)
+				conn, ok := wasmConnPool.Get(p.UserID)
 				if !ok {
 					continue
 				}
@@ -157,7 +163,7 @@ func RouteDispatch(d Dispatch[[]byte]) {
 		// update all conns in old map
 		for _, player := range playerPool.GetAllByMapID(dispatch.conn.MapID) {
 			// get individual conns
-			conn, ok := connPool.Get(player.UserID)
+			conn, ok := wasmConnPool.Get(player.UserID)
 			if !ok {
 				continue
 			}
@@ -183,7 +189,7 @@ func RouteDispatch(d Dispatch[[]byte]) {
 		for _, p := range playerPool.GetAllByMapID(player.MapID) {
 			ids = append(ids, p.UserID)
 			// get individual conns
-			conn, ok := connPool.Get(p.UserID)
+			conn, ok := wasmConnPool.Get(p.UserID)
 			if !ok {
 				continue
 			}
@@ -211,7 +217,7 @@ func RouteDispatch(d Dispatch[[]byte]) {
 		// update player positions
 		for key, p := range allCharacters {
 			// get individual conns
-			conn, ok := connPool.Get(p.UserID)
+			conn, ok := wasmConnPool.Get(p.UserID)
 			if !ok {
 				continue
 			}
@@ -228,5 +234,32 @@ func RouteDispatch(d Dispatch[[]byte]) {
 		characterDispatch := NewDispatch(uuid.NewString(), d.conn, LoadOnlinePlayers, allCharacters)
 		// update conn with all player characters in new map
 		characterDispatch.Marshal().Publish()
+
+	case Chat:
+		// parse chat message from dispatch
+		dispatch := ParseDispatch[ChatMessage](d)
+		chatMessage := dispatch.Data.Message
+
+		// get all players in same map as sender
+		players, ok := playerPool.GetPlayersInMapByUserID(dispatch.Data.UserID)
+		if !ok {
+			return
+		}
+		// send chat message to all players in map
+		for _, player := range players {
+			// get individual conns
+			conn, ok := chatConnPool.Get(player.UserID)
+			if !ok {
+				continue
+			}
+			// create new dispatch
+			newDispatch := NewDispatch(uuid.NewString(), conn, Chat, ChatMessage{
+				UserID:   dispatch.Data.UserID,
+				UserName: dispatch.Data.UserName,
+				Message:  chatMessage,
+			})
+			// update conn with chat message
+			newDispatch.Marshal().Publish()
+		}
 	}
 }

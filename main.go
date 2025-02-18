@@ -36,12 +36,13 @@ func main() {
 	e.PATCH("/user/update", middleware.MiddlewareJWT(authService.HandleUpdateUser))
 	e.DELETE("/user/delete", middleware.MiddlewareJWT(authService.HandleDeleteUser))
 
-	// map endpoints
+	// game endpoints
 	//
+	// websocket connection
+	e.GET("/game/ws/:userID", handlers.HandleGameWebsocket)
 	// client
 	e.GET("/game/client", handlers.HandleGetGame)
 	// wasm
-	e.GET("/game/wasm/ws/:userID", handlers.HandleGameWebsocket)
 	e.GET("/game/wasm/map", middleware.MiddleWareClientHeaders(handlers.HandleGetMapByID))
 	e.GET("/game/wasm/map/ids", middleware.MiddleWareClientHeaders(handlers.HandleGetAllMapsByIDs))
 	e.GET("/game/wasm/map/primary/:userID", middleware.MiddleWareClientHeaders(handlers.HandleGetPlayerPrimaryMap))
