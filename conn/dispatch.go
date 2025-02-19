@@ -239,6 +239,9 @@ func RouteDispatch(d Dispatch[[]byte]) {
 		// parse chat message from dispatch
 		dispatch := ParseDispatch[ChatMessage](d)
 		chatMessage := dispatch.Data.Message
+		if len(chatMessage) > 50 {
+			chatMessage = chatMessage[:50] + "..."
+		}
 
 		// get all players in same map as sender
 		players, ok := playerPool.GetPlayersInMapByUserID(dispatch.Data.UserID)
@@ -247,17 +250,27 @@ func RouteDispatch(d Dispatch[[]byte]) {
 		}
 		// send chat message to all players in map
 		for _, player := range players {
-			// get individual conns
+			// get individual chat conns to display in chat box
 			conn, ok := chatConnPool.Get(player.UserID)
 			if !ok {
 				continue
 			}
-			// create new dispatch
+			// create new dispatch with chat conn
 			newDispatch := NewDispatch(uuid.NewString(), conn, Chat, ChatMessage{
 				UserID:   dispatch.Data.UserID,
 				UserName: dispatch.Data.UserName,
 				Message:  chatMessage,
 			})
+			// update conn with chat message
+			newDispatch.Marshal().Publish()
+
+			// get individual wasm conns to display above player
+			wasmConn, ok := wasmConnPool.Get(player.UserID)
+			if !ok {
+				continue
+			}
+			// update dispatch with wasm conn
+			newDispatch.conn = wasmConn
 			// update conn with chat message
 			newDispatch.Marshal().Publish()
 		}
