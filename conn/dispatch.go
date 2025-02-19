@@ -239,6 +239,8 @@ func RouteDispatch(d Dispatch[[]byte]) {
 		// parse chat message from dispatch
 		dispatch := ParseDispatch[ChatMessage](d)
 		chatMessage := dispatch.Data.Message
+
+		// limit message length
 		if len(chatMessage) > 50 {
 			chatMessage = chatMessage[:50] + "..."
 		}
