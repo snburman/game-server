@@ -26,16 +26,6 @@ func HandleGetGame(c echo.Context) error {
 		)
 	}
 
-	//TODO: refactor for connection
-	// check for connection
-	// _, err = conn.ConnPool.Get(claims.UserID)
-	// if err != nil {
-	// 	return c.JSON(
-	// 		http.StatusUnauthorized,
-	// 		errors.ErrConnectionNotFound.JSON(),
-	// 	)
-	// }
-
 	host := config.Env().SERVER_URL
 	entry := []byte(fmt.Sprintf(
 		`<!DOCTYPE html>
@@ -65,12 +55,22 @@ func HandleGetGame(c echo.Context) error {
 				WebAssembly.instantiateStreaming(fetch("%s/game.wasm"), go.importObject).then(result => {
 					document.getElementById("loadingContainer").style.display = "none";
 					go.run(result.instance);
-					});
+				})
+				.catch(err => {
+					console.error(err)
+					document.getElementById("loadingContainer").style.display = "none";
+					const container = document.getElementById("errorContainer");
+					container.innerHTML = "<font class='messageTextBold'>Failed to load game :[</font>";
+					container.innerHTML += "<font class='messageTextRegular'>Please try refreshing your browser</font>";
+					container.classList.add("messageContainer");
+				})	
+				;
 		</script>
-		<div id="loadingContainer">
-			<font id="loadingText">Loading...</font>
-			<font id="loadingMessage">This may take a minute</font>
+		<div id="loadingContainer" class="messageContainer">
+			<font id="loadingText" class="messageTextBold">Loading...</font>
+			<font class="messageTextRegular">This may take a minute</font>
 		</div>
+		<div id="errorContainer"></div>
 		`, host, claims.UserID, host))
 
 	return c.HTMLBlob(200, entry)

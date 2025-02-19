@@ -4,7 +4,7 @@
          url('/assets/fonts/PixelifySans.ttf')  format('truetype')
 }
 
-#loadingContainer {
+.messageContainer {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -16,14 +16,14 @@
     background: rgba(0 0 0 / 0.8);
 }
 
-#loadingText {
+.messageTextBold {
     font-family: "Pixelify";
     color: white;
     font-size: 24px;
     font-weight: 300;
 }
 
-#loadingMessage {
+.messageTextRegular {
     font-family: "Pixelify";
     color: white;
     font-size: 18px;
