@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 
+	"github.com/snburman/game-server/config"
 	"github.com/snburman/game-server/errors"
 	"github.com/snburman/game-server/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -210,6 +211,12 @@ func GetPlayerAssetByNameUserID(db DatabaseClient, name string, userID string) (
 	asset.Height = byteAsset.Height
 
 	return asset, nil
+}
+
+func GetDefaultPlayerCharacter(db DatabaseClient) (PlayerAsset[PixelData], error) {
+	return GetPlayerAssetByNameUserID(
+		MongoDB, "default_character", config.Env().ADMIN_ID,
+	)
 }
 
 func UpdatePlayerAsset(db DatabaseClient, p PlayerAsset[string]) error {

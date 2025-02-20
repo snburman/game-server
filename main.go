@@ -46,6 +46,7 @@ func main() {
 	e.GET("/game/wasm/map", middleware.MiddleWareClientHeaders(handlers.HandleGetMapByID))
 	e.GET("/game/wasm/map/ids", middleware.MiddleWareClientHeaders(handlers.HandleGetAllMapsByIDs))
 	e.GET("/game/wasm/map/primary/:userID", middleware.MiddleWareClientHeaders(handlers.HandleGetPlayerPrimaryMap))
+	e.GET("/game/wasm/player/default", middleware.MiddleWareClientHeaders(handlers.HandleGetDefaultPlayerCharacter))
 
 	// assets
 	//
@@ -53,6 +54,7 @@ func main() {
 	e.GET("/assets", middleware.MiddlewareJWT(handlers.HandleGetAssets))
 	// assets by player
 	e.GET("/assets/player", middleware.MiddlewareJWT(handlers.HandleGetPlayerAssets))
+	// default player character
 	e.POST("/assets/player", middleware.MiddlewareJWT(handlers.HandleCreatePlayerAsset))
 	e.PATCH("/assets/player", middleware.MiddlewareJWT(handlers.HandleUpdatePlayerAsset))
 	e.DELETE("/assets/player", middleware.MiddlewareJWT(handlers.HandleDeletePlayerAsset))

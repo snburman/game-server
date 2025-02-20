@@ -5,8 +5,11 @@ import (
 	"log"
 
 	"github.com/google/uuid"
+	"github.com/snburman/game-server/config"
 	"github.com/snburman/game-server/db"
 )
+
+var defaultPlayerCharacter *db.PlayerAsset[db.PixelData]
 
 const (
 	Authenticate        FunctionName = "authenticate"
@@ -183,6 +186,22 @@ func RouteDispatch(d Dispatch[[]byte]) {
 			log.Println("error getting player characters: ", err)
 			return
 		}
+		if len(newPlayerCharacters) == 0 {
+			// get default player character
+			if defaultPlayerCharacter == nil {
+				// get default player character
+				char, err := db.GetPlayerAssetByNameUserID(
+					db.MongoDB, "default_character", config.Env().ADMIN_ID,
+				)
+				if err != nil || char.Data == nil {
+					log.Println("error getting default player character: ", err)
+					return
+				}
+				char.UserID = player.UserID
+				defaultPlayerCharacter = &char
+			}
+			newPlayerCharacters = append(newPlayerCharacters, *defaultPlayerCharacter)
+		}
 
 		// get all player ids in new map
 		ids := []string{}
@@ -211,6 +230,27 @@ func RouteDispatch(d Dispatch[[]byte]) {
 			if err != nil {
 				log.Println("error getting player characters: ", err)
 				return
+			}
+
+			// check for ids with no characters
+			unfoundIDS := []string{}
+			for _, id := range ids {
+				found := false
+				for _, character := range allCharacters {
+					if id == character.UserID {
+						found = true
+						break
+					}
+				}
+				if !found {
+					unfoundIDS = append(unfoundIDS, id)
+				}
+			}
+			for _, id := range unfoundIDS {
+				// get default player character
+				defaulChar := *defaultPlayerCharacter
+				defaulChar.UserID = id
+				allCharacters = append(allCharacters, defaulChar)
 			}
 		}
 

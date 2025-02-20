@@ -17,6 +17,7 @@ type Vars struct {
 	SECRET          string
 	CLIENT_ID       string
 	CLIENT_SECRET   string
+	ADMIN_ID        string
 }
 
 // Env() returns Vars struct of environment variables
@@ -37,5 +38,6 @@ func Env() Vars {
 		SECRET:          os.Getenv("SECRET"),
 		CLIENT_ID:       os.Getenv("CLIENT_ID"),
 		CLIENT_SECRET:   os.Getenv("CLIENT_SECRET"),
+		ADMIN_ID:        os.Getenv("ADMIN_ID"),
 	}
 }

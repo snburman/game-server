@@ -51,6 +51,14 @@ func HandleGetPlayerAssets(c echo.Context) error {
 	return c.JSON(200, assets)
 }
 
+func HandleGetDefaultPlayerCharacter(c echo.Context) error {
+	char, err := db.GetDefaultPlayerCharacter(db.MongoDB)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errors.ErrImageNotFound.JSON())
+	}
+	return c.JSON(http.StatusOK, char)
+}
+
 func HandleCreatePlayerAsset(c echo.Context) error {
 	// get user id from claims
 	claims, ok := c.(middleware.JWTContext)
