@@ -55,7 +55,7 @@ type PlayerAsset[T any] struct {
 
 // CreatePlayerAsset will return an error if 'p' already exists.
 // Stores PlayerAsset[[]byte] in db
-func CreatePlayerAsset(db DatabaseClient, p PlayerAsset[string]) (primitive.ObjectID, error) {
+func CreatePlayerAsset(db *MongoDriver, p PlayerAsset[string]) (primitive.ObjectID, error) {
 	// check if asset with same name and userID exists
 	_, err := db.GetOne(bson.M{"user_id": p.UserID, "name": p.Name}, assetDBOptions)
 	if err == nil {
@@ -87,7 +87,7 @@ func CreatePlayerAsset(db DatabaseClient, p PlayerAsset[string]) (primitive.Obje
 	return insertedID, nil
 }
 
-func GetPlayerAssetsByUserID(db DatabaseClient, userID string) ([]PlayerAsset[PixelData], error) {
+func GetPlayerAssetsByUserID(db *MongoDriver, userID string) ([]PlayerAsset[PixelData], error) {
 	assets := []PlayerAsset[PixelData]{}
 
 	// get assets with byte data
@@ -117,7 +117,7 @@ func GetPlayerAssetsByUserID(db DatabaseClient, userID string) ([]PlayerAsset[Pi
 	return assets, nil
 }
 
-func GetPlayerCharactersByUserIDs(db DatabaseClient, userIDs []string) ([]PlayerAsset[PixelData], error) {
+func GetPlayerCharactersByUserIDs(db *MongoDriver, userIDs []string) ([]PlayerAsset[PixelData], error) {
 	filter := bson.A{
 		bson.D{{
 			Key: "$match", Value: bson.D{
@@ -134,7 +134,7 @@ func GetPlayerCharactersByUserIDs(db DatabaseClient, userIDs []string) ([]Player
 	assets := []PlayerAsset[PixelData]{}
 	// get assets with byte data
 	byteAssets := []PlayerAsset[[]byte]{}
-	cursor, err := MongoDB.Client.
+	cursor, err := db.Client.
 		Database(assetDBOptions.Database).
 		Collection(assetDBOptions.Table).
 		Aggregate(context.Background(), filter)
@@ -169,7 +169,7 @@ func GetPlayerCharactersByUserIDs(db DatabaseClient, userIDs []string) ([]Player
 }
 
 // AppendMapPlayerCharacter gets all character assets for a user and appends them to the map
-func AppendMapPlayerCharacter(db DatabaseClient, userID string, _map Map[[]PlayerAsset[PixelData]]) (Map[[]PlayerAsset[PixelData]], error) {
+func AppendMapPlayerCharacter(db *MongoDriver, userID string, _map Map[[]PlayerAsset[PixelData]]) (Map[[]PlayerAsset[PixelData]], error) {
 	// add character assets
 	charAssets, err := GetPlayerCharactersByUserIDs(db, []string{userID})
 	if err != nil {
@@ -184,7 +184,7 @@ func AppendMapPlayerCharacter(db DatabaseClient, userID string, _map Map[[]Playe
 	return _map, nil
 }
 
-func GetPlayerAssetByNameUserID(db DatabaseClient, name string, userID string) (PlayerAsset[PixelData], error) {
+func GetPlayerAssetByNameUserID(db *MongoDriver, name string, userID string) (PlayerAsset[PixelData], error) {
 	asset := PlayerAsset[PixelData]{}
 	res, err := db.GetOne(bson.M{"name": name, "user_id": userID}, assetDBOptions)
 	if err != nil {
@@ -213,13 +213,13 @@ func GetPlayerAssetByNameUserID(db DatabaseClient, name string, userID string) (
 	return asset, nil
 }
 
-func GetDefaultPlayerCharacter(db DatabaseClient) (PlayerAsset[PixelData], error) {
+func GetDefaultPlayerCharacter(db *MongoDriver) (PlayerAsset[PixelData], error) {
 	return GetPlayerAssetByNameUserID(
-		MongoDB, "default_character", config.Env().ADMIN_ID,
+		db, "default_character", config.Env().ADMIN_ID,
 	)
 }
 
-func UpdatePlayerAsset(db DatabaseClient, p PlayerAsset[string]) error {
+func UpdatePlayerAsset(db *MongoDriver, p PlayerAsset[string]) error {
 	// convert to byte asset
 	byteAsset := PlayerAsset[[]byte]{
 		UserID:    p.UserID,
@@ -235,7 +235,7 @@ func UpdatePlayerAsset(db DatabaseClient, p PlayerAsset[string]) error {
 	return err
 }
 
-func DeletePlayerAsset(db DatabaseClient, id string) (count int, err error) {
+func DeletePlayerAsset(db *MongoDriver, id string) (count int, err error) {
 	_id, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return 0, err
