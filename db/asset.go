@@ -103,7 +103,7 @@ func GetPlayerAssetsByUserID(db *MongoDriver, userID string) ([]PlayerAsset[Pixe
 		err := json.Unmarshal(img.Data, &_img.Data)
 		if err != nil {
 			log.Println("error decoding image: ", err)
-			return assets, err
+			return assets, errors.ErrImageWrongFormat
 		}
 		_img.ID = img.ID
 		_img.UserID = img.UserID
