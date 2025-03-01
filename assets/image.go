@@ -1,15 +1,6 @@
 package assets
 
-import (
-	"bytes"
-	"image"
-	"image/png"
-	"io"
-)
-
-const (
-	PNG AssetType = "png"
-)
+type AssetType string
 
 type Image struct {
 	Name   string      `json:"name"`
@@ -20,15 +11,9 @@ type Image struct {
 	Data   []byte      `json:"data"`
 }
 
-func pngBytesFromFile(file io.Reader) ([]byte, error) {
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return nil, err
-	}
-	buf := new(bytes.Buffer)
-	err = png.Encode(buf, img)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+type FrameSpec struct {
+	X int `json:"x"`
+	Y int `json:"y"`
+	W int `json:"w"`
+	H int `json:"h"`
 }
