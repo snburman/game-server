@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
 
@@ -35,12 +34,6 @@ func createPlayerAssetResponseData[T any](p PlayerAsset[T]) bson.D {
 		{Key: "width", Value: p.Width},
 		{Key: "height", Value: p.Height},
 		{Key: "data", Value: p.Data},
-	}
-}
-
-func NewMockMongoDriver(client *mongo.Client) *MongoDriver {
-	return &MongoDriver{
-		Client: client,
 	}
 }
 
@@ -73,7 +66,7 @@ func TestCreatePlayerAsset(t *testing.T) {
 		assert.Nil(t, err, "expected nil but got error")
 		assert.NotEqual(t, res, primitive.NilObjectID, "expected non-nil object ID")
 	})
-	mt.Run("failure", func(mt *mtest.T) {
+	mt.Run("failure-image-exists", func(mt *mtest.T) {
 		// arrange for failure
 		mt.AddMockResponses(
 			// find operation returns existing document
@@ -134,7 +127,7 @@ func TestGetPlayerAssetsByUserID(t *testing.T) {
 		assert.Equal(t, res[0].Height, mockPlayerAsset.Height, "expected same height")
 	})
 
-	mt.Run("failure", func(mt *mtest.T) {
+	mt.Run("failure-wrong-format", func(mt *mtest.T) {
 		mockPlayerAsset := createMockPlayerAsset("wrong_data")
 		// arrange for failure
 		mt.AddMockResponses(
@@ -160,6 +153,7 @@ func TestGetPlayerCharactersByUserIDs(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	mockPlayerAsset := createMockPlayerAsset([]byte("[]"))
 	mt.Run("success", func(mt *mtest.T) {
+		// arrange for success
 		mt.AddMockResponses(
 			// find operation is successful
 			mtest.CreateCursorResponse(
@@ -170,11 +164,33 @@ func TestGetPlayerCharactersByUserIDs(t *testing.T) {
 			),
 			mtest.CreateCursorResponse(0, "game.player_images", mtest.NextBatch),
 		)
+		// act
 		driver := NewMockMongoDriver(mt.Client)
 		_, err := GetPlayerCharactersByUserIDs(driver, []string{mockPlayerAsset.UserID})
-		if err != nil {
-			t.Fatalf("GetPlayerAssetsByUserIDs failed: %v", err)
-		}
+
+		// assert
+		assert.Nil(t, err, "expected nil but got error")
+	})
+
+	mt.Run("failure-wrong-format", func(mt *mtest.T) {
+		mockPlayerAsset := createMockPlayerAsset("wrong_data")
+		// arrange for failure
+		mt.AddMockResponses(
+			// find operation fails
+			mtest.CreateCursorResponse(
+				1,
+				"game.player_images",
+				mtest.FirstBatch,
+				createPlayerAssetResponseData(mockPlayerAsset),
+			),
+			mtest.CreateCursorResponse(0, "game.player_images", mtest.NextBatch),
+		)
+		driver := NewMockMongoDriver(mt.Client)
+		// act
+		_, err := GetPlayerCharactersByUserIDs(driver, []string{mockPlayerAsset.UserID})
+		// assert error
+		assert.NotNil(t, err, "expected error but got nil")
+		assert.Equal(t, err, errors.ErrImageWrongFormat, "expected ErrImageWrongFormat")
 	})
 }
 
@@ -182,8 +198,8 @@ func TestAppendMapPlayerCharacter(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	mockPlayerAsset := createMockPlayerAsset([]byte("[]"))
 	mt.Run("success", func(mt *mtest.T) {
+		// arrange for success
 		mt.AddMockResponses(
-			// find operation is successful
 			mtest.CreateCursorResponse(
 				1,
 				"game.player_images",
@@ -195,11 +211,37 @@ func TestAppendMapPlayerCharacter(t *testing.T) {
 		_map := Map[[]PlayerAsset[PixelData]]{
 			Data: []PlayerAsset[PixelData]{},
 		}
+		// act
 		driver := NewMockMongoDriver(mt.Client)
 		_, err := AppendMapPlayerCharacter(driver, mockPlayerAsset.UserID, _map)
-		if err != nil {
-			t.Fatalf("AppendMapPlayerCharacter failed: %v", err)
+
+		// assert
+		assert.Nil(t, err, "expected nil but got error")
+	})
+
+	mt.Run("failure", func(mt *mtest.T) {
+		mockPlayerAsset := createMockPlayerAsset("wrong_data")
+		// arrange for failure
+		mt.AddMockResponses(
+			// find operation fails
+			mtest.CreateCursorResponse(
+				0,
+				"game.player_images",
+				mtest.FirstBatch,
+				createPlayerAssetResponseData(mockPlayerAsset),
+			),
+			mtest.CreateCursorResponse(0, "game.player_images", mtest.NextBatch),
+		)
+		_map := Map[[]PlayerAsset[PixelData]]{
+			Data: []PlayerAsset[PixelData]{},
 		}
+		// act
+		driver := NewMockMongoDriver(mt.Client)
+		_, err := AppendMapPlayerCharacter(driver, mockPlayerAsset.UserID, _map)
+
+		// assert
+		assert.NotNil(t, err, "expected error but got nil")
+		assert.Equal(t, err, errors.ErrImageWrongFormat, "expected ErrImageWrongFormat")
 	})
 }
 
@@ -207,8 +249,8 @@ func TestGetPlayerAssetByNameUserID(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	mockPlayerAsset := createMockPlayerAsset([]byte("[]"))
 	mt.Run("success", func(mt *mtest.T) {
+		// arrange for success
 		mt.AddMockResponses(
-			// find operation is successful
 			mtest.CreateCursorResponse(
 				1,
 				"game.player_images",
@@ -216,11 +258,51 @@ func TestGetPlayerAssetByNameUserID(t *testing.T) {
 				createPlayerAssetResponseData(mockPlayerAsset),
 			),
 		)
+		// act
 		driver := NewMockMongoDriver(mt.Client)
 		_, err := GetPlayerAssetByNameUserID(driver, mockPlayerAsset.Name, mockPlayerAsset.UserID)
-		if err != nil {
-			t.Fatalf("GetPlayerAssetByNameUserID failed: %v", err)
-		}
+		// assert
+		assert.Nil(t, err, "expected nil but got error")
+	})
+
+	mt.Run("failure-not-found", func(mt *mtest.T) {
+		// arrange for failure
+		mt.AddMockResponses(
+			// find operation returns no results
+			mtest.CreateCursorResponse(
+				0,
+				"game.player_images",
+				mtest.FirstBatch,
+			),
+		)
+		// act
+		driver := NewMockMongoDriver(mt.Client)
+		_, err := GetPlayerAssetByNameUserID(driver, "", "")
+
+		// assert
+		assert.NotNil(t, err, "expected error but got nil")
+		assert.Equal(t, err, errors.ErrImageNotFound, "expected ErrImageNotFound")
+	})
+
+	mt.Run("failure-wrong-format", func(mt *mtest.T) {
+		mockPlayerAsset := createMockPlayerAsset("wrong_data")
+		// arrange for failure
+		mt.AddMockResponses(
+			// find operation fails
+			mtest.CreateCursorResponse(
+				1,
+				"game.player_images",
+				mtest.FirstBatch,
+				createPlayerAssetResponseData(mockPlayerAsset),
+			),
+		)
+		// act
+		driver := NewMockMongoDriver(mt.Client)
+		_, err := GetPlayerAssetByNameUserID(driver, mockPlayerAsset.Name, mockPlayerAsset.UserID)
+
+		// assert
+		assert.NotNil(t, err, "expected error but got nil")
+		assert.Equal(t, err, errors.ErrImageWrongFormat, "expected ErrImageWrongFormat")
 	})
 }
 
@@ -300,5 +382,12 @@ func TestDeletePlayerAsset(t *testing.T) {
 		if err != nil {
 			t.Fatalf("DeletePlayerAsset failed: %v", err)
 		}
+	})
+
+	mt.Run("failure", func(mt *mtest.T) {
+		driver := NewMockMongoDriver(mt.Client)
+		_, err := DeletePlayerAsset(driver, "wrong_id_format")
+		// assert
+		assert.NotNil(t, err, "expected error but got nil")
 	})
 }

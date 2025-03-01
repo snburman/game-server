@@ -154,7 +154,7 @@ func GetPlayerCharactersByUserIDs(db *MongoDriver, userIDs []string) ([]PlayerAs
 		err := json.Unmarshal(img.Data, &_img.Data)
 		if err != nil {
 			log.Println("error decoding image: ", err)
-			return assets, err
+			return assets, errors.ErrImageWrongFormat
 		}
 		_img.ID = img.ID
 		_img.UserID = img.UserID
@@ -173,6 +173,9 @@ func AppendMapPlayerCharacter(db *MongoDriver, userID string, _map Map[[]PlayerA
 	// add character assets
 	charAssets, err := GetPlayerCharactersByUserIDs(db, []string{userID})
 	if err != nil {
+		if err == errors.ErrImageWrongFormat {
+			return _map, err
+		}
 		return _map, errors.ServerError(err.Error())
 	}
 	// set character assets x,y to entrance
