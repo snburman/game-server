@@ -1,17 +1,16 @@
 package utils
 
 import (
-	"errors"
 	"unicode"
 
+	"github.com/snburman/game-server/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func HashPassword(password string) (string, error) {
 	// password must contain one lowercase, one uppercase, one special character, and be at least 8 characters long
-	errWeakPassword := errors.New("weak_password")
 	if len(password) < 8 {
-		return "", errWeakPassword
+		return "", errors.ErrWeakPassword
 	}
 	upper := false
 	lower := false
@@ -28,7 +27,7 @@ func HashPassword(password string) (string, error) {
 		}
 	}
 	if !(upper && lower && number) {
-		return "", errWeakPassword
+		return "", errors.ErrWeakPassword
 	}
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	return string(bytes), err
