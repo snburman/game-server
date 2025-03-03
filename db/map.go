@@ -87,7 +87,7 @@ func CreateMap(db DatabaseClient, m Map[string]) (primitive.ObjectID, error) {
 func GetAllMaps(db DatabaseClient) ([]Map[[]PlayerAsset[PixelData]], error) {
 	var byteMaps []Map[[]byte]
 	err := db.Get(bson.M{}, mapsDBOptions, &byteMaps)
-	if err != nil {
+	if err != nil || len(byteMaps) == 0 {
 		return nil, errors.ErrMapNotFound
 	}
 	return bytesToPlayerAssetMaps(byteMaps)
@@ -131,7 +131,7 @@ func GetMapsByIDs(db DatabaseClient, IDs []string) ([]Map[[]PlayerAsset[PixelDat
 	}
 
 	err := db.Get(bson.M{"_id": bson.M{"$in": objectIDs}}, mapsDBOptions, &byteMaps)
-	if err != nil {
+	if err != nil || len(byteMaps) == 0 {
 		return nil, errors.ErrMapNotFound
 	}
 	return bytesToPlayerAssetMaps(byteMaps)
@@ -151,7 +151,7 @@ func GetMapByNameUserID(db DatabaseClient, name, userID string) (Map[[]PlayerAss
 func GetMapsByUserID(db DatabaseClient, userID string) ([]Map[[]PlayerAsset[PixelData]], error) {
 	var byteMaps []Map[[]byte]
 	err := db.Get(bson.M{"user_id": userID}, mapsDBOptions, &byteMaps)
-	if err != nil {
+	if err != nil || len(byteMaps) == 0 {
 		return nil, errors.ErrMapNotFound
 	}
 	return bytesToPlayerAssetMaps(byteMaps)

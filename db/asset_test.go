@@ -10,9 +10,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
 
+var assetSource = "game.player_images"
+
 func createMockPlayerAsset[T any](data T) PlayerAsset[T] {
 	return PlayerAsset[T]{
-		UserID:    "67bfa82f165e6e4169699147",
+		UserID:    MockID,
 		Name:      "test_image",
 		AssetType: ASSET_PLAYER_UP,
 		X:         0,
@@ -46,7 +48,7 @@ func TestCreatePlayerAsset(t *testing.T) {
 			// first find operation returns no results
 			mtest.CreateCursorResponse(
 				0,
-				"game.player_images",
+				assetSource,
 				mtest.FirstBatch,
 			),
 			// insert operation is successful
@@ -73,7 +75,7 @@ func TestCreatePlayerAsset(t *testing.T) {
 			// and fails CreatePlayerAsset
 			mtest.CreateCursorResponse(
 				1,
-				"game.player_images",
+				assetSource,
 				mtest.FirstBatch,
 				createPlayerAssetResponseData(mockPlayerAsset),
 			),
@@ -98,11 +100,11 @@ func TestGetPlayerAssetsByUserID(t *testing.T) {
 			// find operation is successful
 			mtest.CreateCursorResponse(
 				1,
-				"game.player_images",
+				assetSource,
 				mtest.FirstBatch,
 				createPlayerAssetResponseData(mockPlayerAsset),
 			),
-			mtest.CreateCursorResponse(0, "game.player_images", mtest.NextBatch),
+			mtest.CreateCursorResponse(0, assetSource, mtest.NextBatch),
 		)
 		// act
 		driver := NewMockMongoDriver(mt.Client)
@@ -134,11 +136,11 @@ func TestGetPlayerAssetsByUserID(t *testing.T) {
 			// find operation fails
 			mtest.CreateCursorResponse(
 				1,
-				"game.player_images",
+				assetSource,
 				mtest.FirstBatch,
 				createPlayerAssetResponseData(mockPlayerAsset),
 			),
-			mtest.CreateCursorResponse(0, "game.player_images", mtest.NextBatch),
+			mtest.CreateCursorResponse(0, assetSource, mtest.NextBatch),
 		)
 		driver := NewMockMongoDriver(mt.Client)
 		// act
@@ -158,11 +160,11 @@ func TestGetPlayerCharactersByUserIDs(t *testing.T) {
 			// find operation is successful
 			mtest.CreateCursorResponse(
 				1,
-				"game.player_images",
+				assetSource,
 				mtest.FirstBatch,
 				createPlayerAssetResponseData(mockPlayerAsset),
 			),
-			mtest.CreateCursorResponse(0, "game.player_images", mtest.NextBatch),
+			CreateCursorEnd(assetSource),
 		)
 		// act
 		driver := NewMockMongoDriver(mt.Client)
@@ -179,11 +181,11 @@ func TestGetPlayerCharactersByUserIDs(t *testing.T) {
 			// find operation fails
 			mtest.CreateCursorResponse(
 				1,
-				"game.player_images",
+				assetSource,
 				mtest.FirstBatch,
 				createPlayerAssetResponseData(mockPlayerAsset),
 			),
-			mtest.CreateCursorResponse(0, "game.player_images", mtest.NextBatch),
+			CreateCursorEnd(assetSource),
 		)
 		driver := NewMockMongoDriver(mt.Client)
 		// act
@@ -202,11 +204,11 @@ func TestAppendMapPlayerCharacter(t *testing.T) {
 		mt.AddMockResponses(
 			mtest.CreateCursorResponse(
 				1,
-				"game.player_images",
+				assetSource,
 				mtest.FirstBatch,
 				createPlayerAssetResponseData(mockPlayerAsset),
 			),
-			mtest.CreateCursorResponse(0, "game.player_images", mtest.NextBatch),
+			CreateCursorEnd(assetSource),
 		)
 		_map := Map[[]PlayerAsset[PixelData]]{
 			Data: []PlayerAsset[PixelData]{},
@@ -226,11 +228,11 @@ func TestAppendMapPlayerCharacter(t *testing.T) {
 			// find operation fails
 			mtest.CreateCursorResponse(
 				0,
-				"game.player_images",
+				assetSource,
 				mtest.FirstBatch,
 				createPlayerAssetResponseData(mockPlayerAsset),
 			),
-			mtest.CreateCursorResponse(0, "game.player_images", mtest.NextBatch),
+			CreateCursorEnd(assetSource),
 		)
 		_map := Map[[]PlayerAsset[PixelData]]{
 			Data: []PlayerAsset[PixelData]{},
@@ -253,7 +255,7 @@ func TestGetPlayerAssetByNameUserID(t *testing.T) {
 		mt.AddMockResponses(
 			mtest.CreateCursorResponse(
 				1,
-				"game.player_images",
+				assetSource,
 				mtest.FirstBatch,
 				createPlayerAssetResponseData(mockPlayerAsset),
 			),
@@ -271,7 +273,7 @@ func TestGetPlayerAssetByNameUserID(t *testing.T) {
 			// find operation returns no results
 			mtest.CreateCursorResponse(
 				0,
-				"game.player_images",
+				assetSource,
 				mtest.FirstBatch,
 			),
 		)
@@ -291,7 +293,7 @@ func TestGetPlayerAssetByNameUserID(t *testing.T) {
 			// find operation fails
 			mtest.CreateCursorResponse(
 				1,
-				"game.player_images",
+				assetSource,
 				mtest.FirstBatch,
 				createPlayerAssetResponseData(mockPlayerAsset),
 			),
@@ -314,7 +316,7 @@ func TestGetDefaultPlayerCharacter(t *testing.T) {
 			// find operation is successful
 			mtest.CreateCursorResponse(
 				1,
-				"game.player_images",
+				assetSource,
 				mtest.FirstBatch,
 				createPlayerAssetResponseData(mockPlayerAsset),
 			),
@@ -331,28 +333,23 @@ func TestUpdatePlayerAsset(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	mockPlayerAsset := createMockPlayerAsset("test_data")
 	mt.Run("success", func(mt *mtest.T) {
+		// arrange for success
 		mt.AddMockResponses(
-			// find operation is successful
 			mtest.CreateCursorResponse(
 				1,
-				"game.player_images",
+				assetSource,
 				mtest.FirstBatch,
 				createPlayerAssetResponseData(mockPlayerAsset),
 			),
 			// update operation is successful
-			mtest.CreateSuccessResponse(
-				bson.D{
-					{Key: "ok", Value: 1},
-					{Key: "acknowledged", Value: true},
-					{Key: "n", Value: 1},
-				}...,
-			),
+			SuccessResponse,
 		)
+		// act
 		driver := NewMockMongoDriver(mt.Client)
 		err := UpdatePlayerAsset(driver, mockPlayerAsset)
-		if err != nil {
-			t.Fatalf("UpdatePlayerAsset failed: %v", err)
-		}
+
+		// assert
+		assert.Nil(t, err, "expected nil but got error")
 	})
 }
 
@@ -364,18 +361,12 @@ func TestDeletePlayerAsset(t *testing.T) {
 			// find operation is successful
 			mtest.CreateCursorResponse(
 				1,
-				"game.player_images",
+				assetSource,
 				mtest.FirstBatch,
 				createPlayerAssetResponseData(mockPlayerAsset),
 			),
 			// delete operation is successful
-			mtest.CreateSuccessResponse(
-				bson.D{
-					{Key: "ok", Value: 1},
-					{Key: "acknowledged", Value: true},
-					{Key: "n", Value: 1},
-				}...,
-			),
+			SuccessResponse,
 		)
 		driver := NewMockMongoDriver(mt.Client)
 		_, err := DeletePlayerAsset(driver, mockPlayerAsset.ID.Hex())
