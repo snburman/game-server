@@ -87,7 +87,7 @@ func TestRouteDispatch(t *testing.T) {
 
 		// assert
 		assert.NoError(t, err)
-		assert.Equal(t, UpdatePlayer, dispatch.Function)
+		assert.Equal(t, LoadOnlinePlayers, d.Function)
 	})
 
 	mt.Run("new-map-id", func(mt *mtest.T) {
@@ -111,7 +111,7 @@ func TestRouteDispatch(t *testing.T) {
 
 		// assert
 		assert.NoError(t, err)
-		assert.Equal(t, UpdatePlayer, dispatch.Function)
+		assert.Equal(t, LoadOnlinePlayers, d.Function)
 		assert.Equal(t, "456", conn.MapID)
 	})
 }
