@@ -31,3 +31,30 @@ func CreateCursorEnd(dbTable string) bson.D {
 		mtest.NextBatch,
 	)
 }
+
+func CreateMockPlayerAsset[T any](data T) PlayerAsset[T] {
+	return PlayerAsset[T]{
+		UserID:    MockID,
+		Name:      "test_image",
+		AssetType: ASSET_PLAYER_UP,
+		X:         0,
+		Y:         0,
+		Width:     16,
+		Height:    16,
+		Data:      data,
+	}
+}
+
+func CreatePlayerAssetResponseData[T any](p PlayerAsset[T]) bson.D {
+	return bson.D{
+		{Key: "_id", Value: p.ID},
+		{Key: "user_id", Value: p.UserID},
+		{Key: "name", Value: p.Name},
+		{Key: "asset_type", Value: p.AssetType},
+		{Key: "x", Value: p.X},
+		{Key: "y", Value: p.Y},
+		{Key: "width", Value: p.Width},
+		{Key: "height", Value: p.Height},
+		{Key: "data", Value: p.Data},
+	}
+}

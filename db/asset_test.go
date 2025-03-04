@@ -12,36 +12,9 @@ import (
 
 var assetSource = "game.player_images"
 
-func createMockPlayerAsset[T any](data T) PlayerAsset[T] {
-	return PlayerAsset[T]{
-		UserID:    MockID,
-		Name:      "test_image",
-		AssetType: ASSET_PLAYER_UP,
-		X:         0,
-		Y:         0,
-		Width:     16,
-		Height:    16,
-		Data:      data,
-	}
-}
-
-func createPlayerAssetResponseData[T any](p PlayerAsset[T]) bson.D {
-	return bson.D{
-		{Key: "_id", Value: p.ID},
-		{Key: "user_id", Value: p.UserID},
-		{Key: "name", Value: p.Name},
-		{Key: "asset_type", Value: p.AssetType},
-		{Key: "x", Value: p.X},
-		{Key: "y", Value: p.Y},
-		{Key: "width", Value: p.Width},
-		{Key: "height", Value: p.Height},
-		{Key: "data", Value: p.Data},
-	}
-}
-
 func TestCreatePlayerAsset(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	mockPlayerAsset := createMockPlayerAsset("test_data")
+	mockPlayerAsset := CreateMockPlayerAsset("test_data")
 	mt.Run("success", func(mt *mtest.T) {
 		// arrange for success
 		mt.AddMockResponses(
@@ -77,7 +50,7 @@ func TestCreatePlayerAsset(t *testing.T) {
 				1,
 				assetSource,
 				mtest.FirstBatch,
-				createPlayerAssetResponseData(mockPlayerAsset),
+				CreatePlayerAssetResponseData(mockPlayerAsset),
 			),
 		)
 		// act
@@ -93,7 +66,7 @@ func TestCreatePlayerAsset(t *testing.T) {
 
 func TestGetPlayerAssetsByUserID(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	mockPlayerAsset := createMockPlayerAsset([]byte("[]"))
+	mockPlayerAsset := CreateMockPlayerAsset([]byte("[]"))
 	mt.Run("success", func(mt *mtest.T) {
 		// arrange for success
 		mt.AddMockResponses(
@@ -102,7 +75,7 @@ func TestGetPlayerAssetsByUserID(t *testing.T) {
 				1,
 				assetSource,
 				mtest.FirstBatch,
-				createPlayerAssetResponseData(mockPlayerAsset),
+				CreatePlayerAssetResponseData(mockPlayerAsset),
 			),
 			mtest.CreateCursorResponse(0, assetSource, mtest.NextBatch),
 		)
@@ -130,7 +103,7 @@ func TestGetPlayerAssetsByUserID(t *testing.T) {
 	})
 
 	mt.Run("failure-wrong-format", func(mt *mtest.T) {
-		mockPlayerAsset := createMockPlayerAsset("wrong_data")
+		mockPlayerAsset := CreateMockPlayerAsset("wrong_data")
 		// arrange for failure
 		mt.AddMockResponses(
 			// find operation fails
@@ -138,7 +111,7 @@ func TestGetPlayerAssetsByUserID(t *testing.T) {
 				1,
 				assetSource,
 				mtest.FirstBatch,
-				createPlayerAssetResponseData(mockPlayerAsset),
+				CreatePlayerAssetResponseData(mockPlayerAsset),
 			),
 			mtest.CreateCursorResponse(0, assetSource, mtest.NextBatch),
 		)
@@ -153,7 +126,7 @@ func TestGetPlayerAssetsByUserID(t *testing.T) {
 
 func TestGetPlayerCharactersByUserIDs(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	mockPlayerAsset := createMockPlayerAsset([]byte("[]"))
+	mockPlayerAsset := CreateMockPlayerAsset([]byte("[]"))
 	mt.Run("success", func(mt *mtest.T) {
 		// arrange for success
 		mt.AddMockResponses(
@@ -162,7 +135,7 @@ func TestGetPlayerCharactersByUserIDs(t *testing.T) {
 				1,
 				assetSource,
 				mtest.FirstBatch,
-				createPlayerAssetResponseData(mockPlayerAsset),
+				CreatePlayerAssetResponseData(mockPlayerAsset),
 			),
 			CreateCursorEnd(assetSource),
 		)
@@ -175,7 +148,7 @@ func TestGetPlayerCharactersByUserIDs(t *testing.T) {
 	})
 
 	mt.Run("failure-wrong-format", func(mt *mtest.T) {
-		mockPlayerAsset := createMockPlayerAsset("wrong_data")
+		mockPlayerAsset := CreateMockPlayerAsset("wrong_data")
 		// arrange for failure
 		mt.AddMockResponses(
 			// find operation fails
@@ -183,7 +156,7 @@ func TestGetPlayerCharactersByUserIDs(t *testing.T) {
 				1,
 				assetSource,
 				mtest.FirstBatch,
-				createPlayerAssetResponseData(mockPlayerAsset),
+				CreatePlayerAssetResponseData(mockPlayerAsset),
 			),
 			CreateCursorEnd(assetSource),
 		)
@@ -198,7 +171,7 @@ func TestGetPlayerCharactersByUserIDs(t *testing.T) {
 
 func TestAppendMapPlayerCharacter(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	mockPlayerAsset := createMockPlayerAsset([]byte("[]"))
+	mockPlayerAsset := CreateMockPlayerAsset([]byte("[]"))
 	mt.Run("success", func(mt *mtest.T) {
 		// arrange for success
 		mt.AddMockResponses(
@@ -206,7 +179,7 @@ func TestAppendMapPlayerCharacter(t *testing.T) {
 				1,
 				assetSource,
 				mtest.FirstBatch,
-				createPlayerAssetResponseData(mockPlayerAsset),
+				CreatePlayerAssetResponseData(mockPlayerAsset),
 			),
 			CreateCursorEnd(assetSource),
 		)
@@ -222,7 +195,7 @@ func TestAppendMapPlayerCharacter(t *testing.T) {
 	})
 
 	mt.Run("failure", func(mt *mtest.T) {
-		mockPlayerAsset := createMockPlayerAsset("wrong_data")
+		mockPlayerAsset := CreateMockPlayerAsset("wrong_data")
 		// arrange for failure
 		mt.AddMockResponses(
 			// find operation fails
@@ -230,7 +203,7 @@ func TestAppendMapPlayerCharacter(t *testing.T) {
 				0,
 				assetSource,
 				mtest.FirstBatch,
-				createPlayerAssetResponseData(mockPlayerAsset),
+				CreatePlayerAssetResponseData(mockPlayerAsset),
 			),
 			CreateCursorEnd(assetSource),
 		)
@@ -249,7 +222,7 @@ func TestAppendMapPlayerCharacter(t *testing.T) {
 
 func TestGetPlayerAssetByNameUserID(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	mockPlayerAsset := createMockPlayerAsset([]byte("[]"))
+	mockPlayerAsset := CreateMockPlayerAsset([]byte("[]"))
 	mt.Run("success", func(mt *mtest.T) {
 		// arrange for success
 		mt.AddMockResponses(
@@ -257,7 +230,7 @@ func TestGetPlayerAssetByNameUserID(t *testing.T) {
 				1,
 				assetSource,
 				mtest.FirstBatch,
-				createPlayerAssetResponseData(mockPlayerAsset),
+				CreatePlayerAssetResponseData(mockPlayerAsset),
 			),
 		)
 		// act
@@ -287,7 +260,7 @@ func TestGetPlayerAssetByNameUserID(t *testing.T) {
 	})
 
 	mt.Run("failure-wrong-format", func(mt *mtest.T) {
-		mockPlayerAsset := createMockPlayerAsset("wrong_data")
+		mockPlayerAsset := CreateMockPlayerAsset("wrong_data")
 		// arrange for failure
 		mt.AddMockResponses(
 			// find operation fails
@@ -295,7 +268,7 @@ func TestGetPlayerAssetByNameUserID(t *testing.T) {
 				1,
 				assetSource,
 				mtest.FirstBatch,
-				createPlayerAssetResponseData(mockPlayerAsset),
+				CreatePlayerAssetResponseData(mockPlayerAsset),
 			),
 		)
 		// act
@@ -310,7 +283,7 @@ func TestGetPlayerAssetByNameUserID(t *testing.T) {
 
 func TestGetDefaultPlayerCharacter(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	mockPlayerAsset := createMockPlayerAsset([]byte("[]"))
+	mockPlayerAsset := CreateMockPlayerAsset([]byte("[]"))
 	mt.Run("success", func(mt *mtest.T) {
 		mt.AddMockResponses(
 			// find operation is successful
@@ -318,7 +291,7 @@ func TestGetDefaultPlayerCharacter(t *testing.T) {
 				1,
 				assetSource,
 				mtest.FirstBatch,
-				createPlayerAssetResponseData(mockPlayerAsset),
+				CreatePlayerAssetResponseData(mockPlayerAsset),
 			),
 		)
 		driver := NewMockMongoDriver(mt.Client)
@@ -331,7 +304,7 @@ func TestGetDefaultPlayerCharacter(t *testing.T) {
 
 func TestUpdatePlayerAsset(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	mockPlayerAsset := createMockPlayerAsset("test_data")
+	mockPlayerAsset := CreateMockPlayerAsset("test_data")
 	mt.Run("success", func(mt *mtest.T) {
 		// arrange for success
 		mt.AddMockResponses(
@@ -339,7 +312,7 @@ func TestUpdatePlayerAsset(t *testing.T) {
 				1,
 				assetSource,
 				mtest.FirstBatch,
-				createPlayerAssetResponseData(mockPlayerAsset),
+				CreatePlayerAssetResponseData(mockPlayerAsset),
 			),
 			// update operation is successful
 			SuccessResponse,
@@ -355,7 +328,7 @@ func TestUpdatePlayerAsset(t *testing.T) {
 
 func TestDeletePlayerAsset(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	mockPlayerAsset := createMockPlayerAsset("test_data")
+	mockPlayerAsset := CreateMockPlayerAsset("test_data")
 	mt.Run("success", func(mt *mtest.T) {
 		mt.AddMockResponses(
 			// find operation is successful
@@ -363,7 +336,7 @@ func TestDeletePlayerAsset(t *testing.T) {
 				1,
 				assetSource,
 				mtest.FirstBatch,
-				createPlayerAssetResponseData(mockPlayerAsset),
+				CreatePlayerAssetResponseData(mockPlayerAsset),
 			),
 			// delete operation is successful
 			SuccessResponse,
